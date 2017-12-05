@@ -1,3 +1,5 @@
+<?php
+
 // This file is orginially from George Kanicki and is reproduced with permission.
 // https://community.spiceworks.com/people/george1421
 
@@ -9,7 +11,6 @@ Yes you may. Its all code fragments I found on the internet and glued together t
 Thank you for asking.
 */
 
-<?php
 header("Content-Type: text/xml");
 
 define("AMP_CONF", "/etc/amportal.conf");
