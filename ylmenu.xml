@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CompanyIPPhoneMenu>
+    <!-- Title can show on the phone depending on settings in phone -->
+    <Title>Company Contacts</Title>
+    <MenuItem>
+       	<!-- This name shows in the menu when the button is pressed -->
+        <Name>Employees</Name>
+        <URL>https://pbx.domain.com/ylab.php</URL>
+    </MenuItem>
+    <MenuItem>
+        <Name>Shared Contacts</Name>
+        <URL>https://pbx.domain.com/shared_contacts.xml</URL>
+    </MenuItem>
+</CompanyIPPhoneMenu>
