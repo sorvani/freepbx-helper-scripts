@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--  Output the XML root. This tag must be in the format XXXIPPhoneDirectory -->
+<!-- You may change the word Company below, but no other part of the root tag. -->
+<CompanyIPPhoneDirectory>
+    <!-- You repeact the entire DirectoryEntry for each contact -->
+    <DirectoryEntry>
+        <!-- This is the name the phone will display -->
+        <Name>John Doe</Name>
+        <!-- This is the number the phone will dial. -->
+        <!-- If you require more than 10 digit dialing, make sure this matches your dialplan. -->
+        <Telephone>5555551212</Telephone>
+    </DirectoryEntry>
+    <DirectoryEntry>
+        <Name>Jenny</Name>
+        <Telephone>5558675309</Telephone>
+    </DirectoryEntry>
+</CompanyIPPhoneDirectory>
