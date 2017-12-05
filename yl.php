@@ -1,6 +1,14 @@
 // This file is orginially from George Kanicki and is reproduced with permission.
 // https://community.spiceworks.com/people/george1421
 
+/*
+George1421 Dec 4, 2017 at 8:37 PM
+
+Yes you may. Its all code fragments I found on the internet and glued together to make the script. So its a mix of my imagination and others imagination too. I don't have a reference where the original bits came from.
+
+Thank you for asking.
+*/
+
 <?php
 header("Content-Type: text/xml");
 
