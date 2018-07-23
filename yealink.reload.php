@@ -40,13 +40,12 @@
         $wrets .= fread($socket, 8192);
     }
     fclose($socket);
+
+    // pattern and preg_match_all courtesy of https://github.com/tjgruber
     //regex pattern to use -- matches any number after a "/"
     $pattern = '/\/([0-9]+)/';
     //strip out all the /### values
     preg_match_all($pattern,$wrets,$matches);
-
-    // quick dump to know what's in $matches
-    // echo '<pre>'; var_dump($matches);'</pre>';
 
     // loop to look at only the extensions defined above
     foreach($matches[1] as $item => $value) {
