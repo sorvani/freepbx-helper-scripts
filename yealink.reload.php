@@ -29,15 +29,23 @@
     fputs($socket, "Action: Command\r\n");
     fputs($socket, "Command: pjsip list endpoints\r\n\r\n");
     fputs($socket, "Action: Logoff\r\n\r\n");
+
+    // read the result into a string
+    wrets = '';
     while (!feof($socket)) {
         $wrets .= fread($socket, 8192);
     }
     fclose($socket);
-    echo <<<ASTERISKMANAGEREND
-<pre>
-ASTERISK MANAGER OUTPUT:<br />
-$wrets
-</pre>
-ASTERISKMANAGEREND;
+
+    //regex pattern to use -- matches any number after a "/"
+    $pattern = '/\/([0-9]+)/';
+    //strip out all the /### values
+    preg_match_all($pattern,$wrets,$matches);
+
+    //removes the "/" character in front of each extension.
+    $extensions = str_replace("/", "", implode("<br>\r\n", $matches[0]));
+
+    //echos results
+    echo $extensions;
 
 ?>
