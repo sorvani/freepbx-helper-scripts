@@ -28,7 +28,7 @@ $astman=new AstMan;
         return false;
     }
 
-    $astman->Logout();
+    //$astman->Logout();
 
     // pattern and preg_match_all courtesy of https://github.com/tjgruber    
     //regex pattern to use -- matches any number after a "/"
@@ -58,6 +58,7 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
             <tr>
                 <th><center><h4>Selected</h4></center></th>
                 <th><center><h4>Extension</h4></center></th>
+                <th><center><h4>Details</h4></center></th>
             </tr>
         </thead>
         <tbody>
@@ -71,6 +72,15 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
         if($value >= $f_ext && $value <= $l_ext) {
             echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension\" value=\"$value\"></td>\n";
             echo "\t\t\t<td align=\"center\"><strong>$value</strong></td>\n";
+            echo "\t\t\t<td align=\"left\">Calling \$astman->PJSIPShowEndpoint($value)<br>\n";
+
+            //fucking not working
+               $ext_detail = $astman->PJSIPShowEndpoint($value);
+               foreach($ext_detail as $skey=>$svalue) {
+                   echo "$skey says $svalue<br>\r\n";
+               }
+
+               echo "</td>\n";
         }
     }
 
@@ -80,7 +90,7 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     print "<p align=\"center\"><input type=\"submit\" name=\"submit\" value=\"Reload\">&nbsp;";
     print "<input type=\"submit\" name=\"submit\" value=\"Reboot\"></p>";
     echo "</fieldset>";
-
+    $astman->Logout();
 } else {
     ?>
     <center>

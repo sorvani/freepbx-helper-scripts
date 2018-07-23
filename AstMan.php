@@ -133,27 +133,54 @@ class AstMan {
         if (strpos($wrets, "Output: Objects found: ") != FALSE){
             return $wrets;
         }
-        $this->error =  "Failed list PJSIP endpoints";
+        $this->error =  "Failed to list PJSIP endpoints";
         return FALSE;
     }
 
-    function RebootYealink($extension){
+    function RebootYealink($extension) {
         $wrets = $this->Query("Action: Command\r\nCommand: pjsip send notify reboot-yealink endpoint $extension\r\n\r\n");
-        if (strpos($wrets, "Output: Sending NOTIFY of type 'reboot-yealink' to '$extension'") != FALSE){
+        if (strpos($wrets, "Output: Sending NOTIFY of type 'reboot-yealink' to '$extension'") != FALSE) {
             return TRUE;
         }
         $this->error =  "Failed to send reboot-yealink command to $extension";
         return FALSE;
     }
 
-    function ReloadYealink($extension){
+    function ReloadYealink($extension) {
         $wrets = $this->Query("Action: Command\r\nCommand: pjsip send notify reload-yealink endpoint $extension\r\n\r\n");
-        if (strpos($wrets, "Output: Sending NOTIFY of type 'reload-yealink' to '$extension'") != FALSE){
+        if (strpos($wrets, "Output: Sending NOTIFY of type 'reload-yealink' to '$extension'") != FALSE) {
             return TRUE;
         }
         $this->error =  "Failed to send reload-yealink command to $extension";
         return FALSE;
     }
 
+    function PJSIPShowEndpoint($extension) {
+        //$extension must only be a single extension
+        echo "Function running on $extension<br>\r\n";
+        $wrets = $this->Query("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
+        if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
+            $this->error = "Failed to get data for extension $extension";
+            return FALSE;
+        } else {
+            $getitem = 0;
+            $lines = explode("\n", $wrets);
+            foreach($lines as $line) {
+                $a = explode(":", $line, 2);
+                if (trim($a[0]) == "Event") {
+                    if (trim($a[1]) == "ContactStatusDetail") {
+                        $getitem = 1;
+                    } else {
+                        $getitem = 0;
+                    }
+                }
+                if ($getitem == 1 && strlen(trim($a[0]))) {
+                    $key = trim($a[0]);
+                    $value[$key] = trim($a[1]);
+                }
+            }
+            return $value;
+        }
+    }
 }
 ?>
