@@ -178,7 +178,7 @@ class AstMan {
                     $value[$key] = trim($a[1]);
                 }
             }
-            return $value
+            return $value;
         }
     }
 }
