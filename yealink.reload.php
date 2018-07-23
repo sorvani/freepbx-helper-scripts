@@ -28,7 +28,7 @@ $astman=new AstMan;
         return false;
     }
 
-    $astman->Logout();
+    //$astman->Logout();
 
     // pattern and preg_match_all courtesy of https://github.com/tjgruber    
     //regex pattern to use -- matches any number after a "/"
