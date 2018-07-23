@@ -158,7 +158,17 @@ class AstMan {
     function PJSIPShowEndpoint($extension) {
         //$extension must only be a single extension
         echo "Function running on $extension<br>\r\n";
-        $wrets = $this->Query("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
+        $wrets="";
+        fputs($this->socket, "Action: Login\r\n");
+        fputs($this->socket, "UserName: $db_user\r\n");
+        fputs($this->socket, "Secret: $db_pass\r\n\r\n");
+        fputs($this->socket, "Action: PJSIPShowEndpoint\r\n");
+        fputs($this->socket, "Endpoint: $extension\r\n\r\n");
+        
+        while (!feof($this->socket)) {
+            $wrets .= fread($socket, 8192);
+        }
+    
         if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
