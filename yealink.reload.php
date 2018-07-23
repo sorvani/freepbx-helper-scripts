@@ -3,6 +3,10 @@
 // Some initial sample code found at https://www.voip-info.org/asterisk-manager-example:-php
 // amportal.conf code modified from https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/yl.php
 
+    //Set the minumim and maxium extensions to display
+    $f_ext = 100;
+    $l_ext = 199;
+
     // Open /etc/amportal.conf and get the Asterisk Manager connection information
     define("AMP_CONF", "/etc/amportal.conf");
     $file = file(AMP_CONF);
@@ -36,16 +40,25 @@
         $wrets .= fread($socket, 8192);
     }
     fclose($socket);
-
     //regex pattern to use -- matches any number after a "/"
     $pattern = '/\/([0-9]+)/';
     //strip out all the /### values
     preg_match_all($pattern,$wrets,$matches);
 
-    //removes the "/" character in front of each extension.
-    $extensions = str_replace("/", "", implode("<br>\r\n", $matches[0]));
+    // quick dump to know what's in $matches
+    // echo '<pre>'; var_dump($matches);'</pre>';
 
-    //echos results
-    echo $extensions;
+    // loop to look at only the extensions defined above
+    foreach($matches[1] as $item => $value) {
+        if($value >= $f_ext && $value <= $l_ext) {
+            // temp dump to screen
+            echo "item: ";
+            echo $item;
+            echo "   value: ";
+            echo $value;
+            echo "<br />\r\n";
+        }
+    }
+
 
 ?>
