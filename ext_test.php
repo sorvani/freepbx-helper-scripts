@@ -21,7 +21,7 @@ $txt_file = 'ext_test.txt';
 
 //Check if file exists, if not
 if (file_exists($txt_file)) {
-    echo "<br><br><br>";
+//    echo "<br><br><br>";
 //    echo "<center>The file <strong>$txt_file</strong> exists and is readable.</center>";
     echo "<br>";
 }
@@ -51,19 +51,20 @@ if ($handle) {
 ?>
 
 <body>
-    <!-- Start of form, uses built-in htmlspecialchars security function as added precaution:
-    http://php.net/manual/en/function.htmlspecialchars.php -->
-    <form enctype="multipart/form-data" method="post" action=<?php print htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
 
 <?php 
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     
 ?>
 
-    <center>
+<center>
     <fieldset style="width:270px"><legend class="legendtitle">Select extension(s) to reboot or reload:</legend>
 
-    <!-- begin table -->
+<!-- Start of form, uses built-in htmlspecialchars security function as added precaution:
+    http://php.net/manual/en/function.htmlspecialchars.php -->
+    <form enctype="multipart/form-data" method="post" action=<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
+
+        <!-- begin table -->
     <center>
     <table border="1" cellspacing="3" cellpadding="3">
         <thead>
@@ -77,47 +78,46 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
 
 <?php
 
-// print default table using file
+// echo default table using file
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     foreach($matches[1] as $item => $value) {
         if($value >= $f_ext && $value <= $l_ext) {
-            echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension\" value=\"$value\"></td>\n";
+            echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension[]\" value=\"$value\"></td>\n";
             echo "\t\t\t<td align=\"center\"><strong>$value</strong></td>\n";
         }
     }
 
-    print "</tbody>\n";
-    print "</table>\n"; // end table
-    print "<br>\n";
-    print "<p align=\"center\"><input type=\"submit\" name=\"submit\" value=\"Reload\">&nbsp;";
-    print "<input type=\"submit\" name=\"submit\" value=\"Reboot\"></p>";
-    echo "</fieldset>";
+    echo "</tbody>\n";
+    echo "</table>\n"; // end table
+    echo "<br>\n";
+    echo "<p align=\"center\"><input type=\"submit\" name=\"reload\" value=\"Reload\">&nbsp;";
+    echo "<input type=\"submit\" name=\"reboot\" value=\"Reboot\"></p>";
+    echo "\n</form>";
+    echo "\n</fieldset>";
 
 } else {
     ?>
-    <center>
-    <table border="1" cellspacing="3" cellpadding="3">
-    <thead>
-        <tr>
-            <th><center><h4>Submision Results:</h4></th>
-        </tr>
-    </thead>
-    <tbody>
+
+<form enctype="multipart/form-data" method="post" action=<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
+
+
 
 <?php 
 
-// Submission results
-    print "\t\t<tr>\n\t\t\t<td>Placeholder for later...</td>\n\t\t</tr>\n";
-    print "</tbody>\n";
-    echo "</table>";
+if (!empty($_POST["extension"])) {
+foreach ($extension as $extension_value) {
+    //echo "$extension_value<br>";
+}
+echo "<br><p align=\"center\"><input type=\"submit\" name=\"confirm\" value=\"Confirm RELOAD\"></p>";
 
+//form processing post to function somewhere around here... maybe another file...
+
+}
 }
 
 ?>
 
 </center>
-
-</form>
 
 </body>
 
