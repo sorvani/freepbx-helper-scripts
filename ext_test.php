@@ -7,8 +7,6 @@
 <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
 </head>
 
-<body>
-
 <?php
 
 //Set the minumim and maxium extensions to display
@@ -52,28 +50,29 @@ if ($handle) {
 
 ?>
 
-<!-- Start of form, uses built-in htmlspecialchars security function as added precaution:
-        http://php.net/manual/en/function.htmlspecialchars.php -->
-<form enctype="multipart/form-data" method="post" action=<?php print htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
+<body>
+    <!-- Start of form, uses built-in htmlspecialchars security function as added precaution:
+    http://php.net/manual/en/function.htmlspecialchars.php -->
+    <form enctype="multipart/form-data" method="post" action=<?php print htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
 
 <?php 
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     
 ?>
 
-<center>
-<fieldset style="width:270px"><legend class="legendtitle">Select extension(s) to reboot:</legend>
+    <center>
+    <fieldset style="width:270px"><legend class="legendtitle">Select extension(s) to reboot or reload:</legend>
 
-<!-- begin table -->
-<center>
-<table border="1" cellspacing="3" cellpadding="3">
-    <thead>
-        <tr>
-            <th><center><h4>Reboot?</h4></center></th>
-            <th><center><h4>Extension</h4></center></th>
-        </tr>
-    </thead>
-    <tbody>
+    <!-- begin table -->
+    <center>
+    <table border="1" cellspacing="3" cellpadding="3">
+        <thead>
+            <tr>
+                <th><center><h4>Selected</h4></center></th>
+                <th><center><h4>Extension</h4></center></th>
+            </tr>
+        </thead>
+        <tbody>
 <?php } ?>
 
 <?php
@@ -90,7 +89,8 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     print "</tbody>\n";
     print "</table>\n"; // end table
     print "<br>\n";
-    print "<p align=\"center\"><input type=\"submit\" name=\"submit\" value=\"Reboot\"></p>";
+    print "<p align=\"center\"><input type=\"submit\" name=\"submit\" value=\"Reload\">&nbsp;";
+    print "<input type=\"submit\" name=\"submit\" value=\"Reboot\"></p>";
     echo "</fieldset>";
 
 } else {
