@@ -1,0 +1,37 @@
+ASTERISK MANAGER OUTPUT:
+ 
+Asterisk Call Manager/4.0.3
+Response: Success
+Message: Authentication accepted
+ 
+Event: FullyBooted
+Privilege: system,all
+Uptime: 1069663
+LastReload: 452056
+Status: Fully Booted
+ 
+Response: Success
+Message: Command output follows
+Output:
+Output:  Endpoint:      
+Output: ==========================================================================================
+Output:
+Output:  Endpoint:  101/101                                              Not in use    0 of inf
+Output:  Endpoint:  102/102                                              Not in use    0 of inf
+Output:  Endpoint:  103/103                                              Not in use    0 of inf
+Output:  Endpoint:  104/104                                              Not in use    0 of inf
+Output:  Endpoint:  105/105                                              Not in use    0 of inf
+Output:  Endpoint:  108/108                                              Not in use    0 of inf
+Output:  Endpoint:  110/110                                              Not in use    0 of inf
+Output:  Endpoint:  99103/99103                                          Unavailable   0 of inf
+Output:  Endpoint:  99108/99108                                          Unavailable   0 of inf
+Output:  Endpoint:  9999103/9999103                                      Unavailable   0 of inf
+Output:  Endpoint:  999999103/999999103                                  Unavailable   0 of inf
+Output:  Endpoint:  Bundy_VoIPms_PJSIP                                   Not in use    0 of inf
+Output:  Endpoint:  dpma_endpoint                                        Unavailable   0 of inf
+Output:
+Output: Objects found: 13
+Output:
+ 
+Response: Goodbye
+Message: Thanks for all the fish.
