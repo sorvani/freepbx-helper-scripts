@@ -1,7 +1,7 @@
 <?php
 require_once 'AstMan.php';
 
-$astman=new AstMan
+$astman=new AstMan;
 
 
 // Some initial sample code found at https://www.voip-info.org/asterisk-manager-example:-php
@@ -18,6 +18,9 @@ $astman=new AstMan
         echo $astMan->error;
         return false;
     }
+
+    $astman->Logout();
+
     // pattern and preg_match_all courtesy of https://github.com/tjgruber    
     //regex pattern to use -- matches any number after a "/"
     $pattern = '/\/([0-9]+)/';
