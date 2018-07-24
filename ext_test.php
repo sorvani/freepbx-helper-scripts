@@ -15,6 +15,7 @@ $l_ext = 199;
 
 //including the future php file that processes the form
 include "ext_test_form_processor.php";
+include "ext_test_form_processor_confirm.php";
 
 //File to use... may work with $wrets, I can't test that.
 $txt_file = 'ext_test.txt';
