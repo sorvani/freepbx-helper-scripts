@@ -67,8 +67,8 @@ class AstMan {
             $line = fgets($this->socket, 4096);
             $wrets .= $line;
             $info = stream_get_meta_data($this->socket);
-        //} while ($info['timed_out'] == false);
-        } while (!feof($this->socket) && $info['timed_out'] == false );
+        } while ($line != "\r\n" && $info['timed_out'] == false );
+        //} while (!feof($this->socket) && $info['timed_out'] == false );
         return $wrets;
     }
 
