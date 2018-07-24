@@ -28,8 +28,6 @@ $astman=new AstMan;
         return false;
     }
 
-    //$astman->Logout();
-
     // pattern and preg_match_all courtesy of https://github.com/tjgruber    
     //regex pattern to use -- matches any number after a "/"
     $pattern = '/\/([0-9]+)/';
@@ -70,17 +68,18 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     foreach($matches[1] as $item => $value) {
         if($value >= $f_ext && $value <= $l_ext) {
+            $ext_detail = "";
             echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension\" value=\"$value\"></td>\n";
             echo "\t\t\t<td align=\"center\"><strong>$value</strong></td>\n";
             echo "\t\t\t<td align=\"left\">Calling \$astman->PJSIPShowEndpoint($value)<br>\n";
 
             //fucking not working
-               $ext_detail = $astman->PJSIPShowEndpoint($value);
-               foreach($ext_detail as $skey=>$svalue) {
-                   echo "$skey says $svalue<br>\r\n";
-               }
-
-               echo "</td>\n";
+            $ext_detail = $astman->PJSIPShowEndpoint($value);
+            // echo var_dump($ext_detail);
+            foreach($ext_detail as $skey=>$svalue) {
+                echo "$skey says $svalue<br>\r\n";
+            }
+            echo "</td>\n";
         }
     }
 
