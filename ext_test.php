@@ -6,7 +6,7 @@
 <title>EXT TEST</title>
 <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
 </head>
-
+<body>
 <?php
 
 //Set the minumim and maxium extensions to display
@@ -21,9 +21,6 @@ $txt_file = 'ext_test.txt';
 
 //Check if file exists, if not
 if (file_exists($txt_file)) {
-//    echo "<br><br><br>";
-//    echo "<center>The file <strong>$txt_file</strong> exists and is readable.</center>";
-    echo "<br>";
 }
 else {
     echo "The file $txt_file does not exist.";
@@ -49,9 +46,6 @@ if ($handle) {
 }
 
 ?>
-
-<body>
-
 <?php 
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     
@@ -65,7 +59,6 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     <form enctype="multipart/form-data" method="post" action=<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
 
         <!-- begin table -->
-    <center>
     <table border="1" cellspacing="3" cellpadding="3">
         <thead>
             <tr>
@@ -90,34 +83,20 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     echo "</tbody>\n";
     echo "</table>\n"; // end table
     echo "<br>\n";
-    echo "<p align=\"center\"><input type=\"submit\" name=\"reload\" value=\"Reload\">&nbsp;";
+    echo "<p align=\"center\"><input type=\"submit\" name=\"reload\" value=\"Reload\">";
     echo "<input type=\"submit\" name=\"reboot\" value=\"Reboot\"></p>";
     echo "\n</form>";
     echo "\n</fieldset>";
+    echo "\n</center>";
 
 } else {
     ?>
 
-<form enctype="multipart/form-data" method="post" action=<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
-
-
-
 <?php 
 
-if (!empty($_POST["extension"])) {
-foreach ($extension as $extension_value) {
-    //echo "$extension_value<br>";
-}
-echo "<br><p align=\"center\"><input type=\"submit\" name=\"confirm\" value=\"Confirm RELOAD\"></p>";
-
-//form processing post to function somewhere around here... maybe another file...
-
-}
 }
 
 ?>
-
-</center>
 
 </body>
 
