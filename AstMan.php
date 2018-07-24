@@ -1,6 +1,5 @@
 <?php
 class AstMan {
-
     var $socket;
     var $error;
     function AstMan() {
@@ -58,7 +57,6 @@ class AstMan {
     }
   
     function Query($query) {
-        $wrets = "";
         if ($this->socket === FALSE)
             return FALSE;
 
@@ -76,7 +74,6 @@ class AstMan {
     }
 
     function GetDB($family, $key) {
-        $value = "";
         $wrets = $this->Query("Action: Command\r\nCommand: database get $family $key\r\n\r\n");
         if ($wrets) {
             $value_start = strpos($wrets, "Value: ") + 7;
@@ -133,22 +130,22 @@ class AstMan {
         if (strpos($wrets, "Output: Objects found: ") != FALSE){
             return $wrets;
         }
-        $this->error =  "Failed to list PJSIP endpoints";
+        $this->error =  "Failed list PJSIP endpoints";
         return FALSE;
     }
 
-    function RebootYealink($extension) {
+    function RebootYealink($extension){
         $wrets = $this->Query("Action: Command\r\nCommand: pjsip send notify reboot-yealink endpoint $extension\r\n\r\n");
-        if (strpos($wrets, "Output: Sending NOTIFY of type 'reboot-yealink' to '$extension'") != FALSE) {
+        if (strpos($wrets, "Output: Sending NOTIFY of type 'reboot-yealink' to '$extension'") != FALSE){
             return TRUE;
         }
         $this->error =  "Failed to send reboot-yealink command to $extension";
         return FALSE;
     }
 
-    function ReloadYealink($extension) {
+    function ReloadYealink($extension){
         $wrets = $this->Query("Action: Command\r\nCommand: pjsip send notify reload-yealink endpoint $extension\r\n\r\n");
-        if (strpos($wrets, "Output: Sending NOTIFY of type 'reload-yealink' to '$extension'") != FALSE) {
+        if (strpos($wrets, "Output: Sending NOTIFY of type 'reload-yealink' to '$extension'") != FALSE){
             return TRUE;
         }
         $this->error =  "Failed to send reload-yealink command to $extension";
@@ -163,25 +160,35 @@ class AstMan {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
         } else {
-            echo "Successfully pulled information for $extension<br>\r\n";
+            echo "Successfully pulled information for $extension<br />\r\n";
+            echo "Dumping \$wrets from AstMan function<br />\r\n";
+            echo "<pre>\r\n";
+            echo var_dump($wrets);
+            echo "</pre>\r\n";
+            $item = "";
             $getitem = 0;
             $lines = explode("\n", $wrets);
             foreach($lines as $line) {
                 $a = explode(":", $line, 2);
+                echo "Dumping \$a <br />\r\n<pre>\r\n";
+                var_dump($a);
+                echo "\r\n</pre>\r\n";
                 if (trim($a[0]) == "Event") {
                     if (trim($a[1]) == "ContactStatusDetail") {
+                        echo "Turning on \$getitem<br />\r\n";
                         $getitem = 1;
                     } else {
+                        echo "Turning off \$getitem<br />\r\n";
                         $getitem = 0;
                     }
                 }
                 if ($getitem == 1 && strlen(trim($a[0]))) {
                     $key = trim($a[0]);
-                    $value[$key] = trim($a[1]);
+                    $item[$key] = trim($a[1]);
                 }
             }
-            return $value;
         }
+    return $item;
     }
 }
 ?>
