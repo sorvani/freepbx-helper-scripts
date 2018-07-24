@@ -76,7 +76,7 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     foreach($matches[1] as $item => $value) {
         if($value >= $f_ext && $value <= $l_ext) {
-            echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension\" value=\"$value\"></td>\n";
+            echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension[]\" value=\"$value\"></td>\n";
             echo "\t\t\t<td align=\"center\"><strong>$value</strong></td>\n";
             $useragent = "";
             $useragent = $astman->PJSIPShowEndpoint($value);
