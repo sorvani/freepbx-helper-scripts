@@ -11,7 +11,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             //pass $extension_value to RELOAD function here.
         }
         echo "Reload done.";
-    } else {
+    } 
+    if (isset($_POST['confirm_reboot'])) {
         foreach ($extension as $extension_value) { 
             echo "<center>$extension_value</center>\n";
             //pass $extension_value to REBOOT function here.
