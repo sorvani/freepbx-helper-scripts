@@ -1,6 +1,5 @@
 <?php
 class AstMan {
-
     var $socket;
     var $error;
     function AstMan() {
@@ -56,9 +55,8 @@ class AstMan {
         }
         return;
     }
-  
+
     function Query($query) {
-        $wrets = "";
         if ($this->socket === FALSE)
             return FALSE;
 
@@ -67,7 +65,20 @@ class AstMan {
             $line = fgets($this->socket, 4096);
             $wrets .= $line;
             $info = stream_get_meta_data($this->socket);
-        } while ($line != "\r\n" && $info['timed_out'] == false );
+        } while ($info['timed_out'] == false);
+        //} while ($line != "\r\n" && $info['timed_out'] == false );
+        return $wrets;
+    }
+
+    function QueryFull($query) {
+        if ($this->socket === FALSE)
+            return FALSE;
+
+        fputs($this->socket, $query);
+        $socket = $this->socket;
+        while (!feof($socket)) {
+            $wrets .= fread($socket, 8192);
+        }
         return $wrets;
     }
 
@@ -76,7 +87,6 @@ class AstMan {
     }
 
     function GetDB($family, $key) {
-        $value = "";
         $wrets = $this->Query("Action: Command\r\nCommand: database get $family $key\r\n\r\n");
         if ($wrets) {
             $value_start = strpos($wrets, "Value: ") + 7;
@@ -133,22 +143,22 @@ class AstMan {
         if (strpos($wrets, "Output: Objects found: ") != FALSE){
             return $wrets;
         }
-        $this->error =  "Failed to list PJSIP endpoints";
+        $this->error =  "Failed list PJSIP endpoints";
         return FALSE;
     }
 
-    function RebootYealink($extension) {
+    function RebootYealink($extension){
         $wrets = $this->Query("Action: Command\r\nCommand: pjsip send notify reboot-yealink endpoint $extension\r\n\r\n");
-        if (strpos($wrets, "Output: Sending NOTIFY of type 'reboot-yealink' to '$extension'") != FALSE) {
+        if (strpos($wrets, "Output: Sending NOTIFY of type 'reboot-yealink' to '$extension'") != FALSE){
             return TRUE;
         }
         $this->error =  "Failed to send reboot-yealink command to $extension";
         return FALSE;
     }
 
-    function ReloadYealink($extension) {
+    function ReloadYealink($extension){
         $wrets = $this->Query("Action: Command\r\nCommand: pjsip send notify reload-yealink endpoint $extension\r\n\r\n");
-        if (strpos($wrets, "Output: Sending NOTIFY of type 'reload-yealink' to '$extension'") != FALSE) {
+        if (strpos($wrets, "Output: Sending NOTIFY of type 'reload-yealink' to '$extension'") != FALSE){
             return TRUE;
         }
         $this->error =  "Failed to send reload-yealink command to $extension";
@@ -157,22 +167,12 @@ class AstMan {
 
     function PJSIPShowEndpoint($extension) {
         //$extension must only be a single extension
-        echo "Function running on $extension<br>\r\n";
-        $wrets="";
-        fputs($this->socket, "Action: Login\r\n");
-        fputs($this->socket, "UserName: $db_user\r\n");
-        fputs($this->socket, "Secret: $db_pass\r\n\r\n");
-        fputs($this->socket, "Action: PJSIPShowEndpoint\r\n");
-        fputs($this->socket, "Endpoint: $extension\r\n\r\n");
-        
-        while (!feof($this->socket)) {
-            $wrets .= fread($socket, 8192);
-        }
-    
+        $wrets = $this->QueryFull("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
         if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
         } else {
+            $item = "";
             $getitem = 0;
             $lines = explode("\n", $wrets);
             foreach($lines as $line) {
@@ -186,10 +186,10 @@ class AstMan {
                 }
                 if ($getitem == 1 && strlen(trim($a[0]))) {
                     $key = trim($a[0]);
-                    $value[$key] = trim($a[1]);
+                    $item[$key] = trim($a[1]);
                 }
             }
-            return $value;
+            return $item;
         }
     }
 }

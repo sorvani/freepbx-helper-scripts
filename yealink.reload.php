@@ -28,8 +28,6 @@ $astman=new AstMan;
         return false;
     }
 
-    //$astman->Logout();
-
     // pattern and preg_match_all courtesy of https://github.com/tjgruber    
     //regex pattern to use -- matches any number after a "/"
     $pattern = '/\/([0-9]+)/';
@@ -58,7 +56,9 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
             <tr>
                 <th><center><h4>Selected</h4></center></th>
                 <th><center><h4>Extension</h4></center></th>
-                <th><center><h4>Details</h4></center></th>
+                <th><center><h4>Brand</h4></center></th>
+                <th><center><h4>Model</h4></center></th>
+                <th><center><h4>Firmware</h4></center></th>
             </tr>
         </thead>
         <tbody>
@@ -72,15 +72,12 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
         if($value >= $f_ext && $value <= $l_ext) {
             echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension\" value=\"$value\"></td>\n";
             echo "\t\t\t<td align=\"center\"><strong>$value</strong></td>\n";
-            echo "\t\t\t<td align=\"left\">Calling \$astman->PJSIPShowEndpoint($value)<br>\n";
-
-            //fucking not working
-               $ext_detail = $astman->PJSIPShowEndpoint($value);
-               foreach($ext_detail as $skey=>$svalue) {
-                   echo "$skey says $svalue<br>\r\n";
-               }
-
-               echo "</td>\n";
+            $useragent = "";
+            $useragent = $astman->PJSIPShowEndpoint($value);
+            $ext_detail = explode(" ", $useragent['UserAgent'],3);
+            echo "\t\t\t<td align=\"center\">$ext_detail[0]</td>\n";
+            echo "\t\t\t<td align=\"center\">$ext_detail[1]</td>\n";
+            echo "\t\t\t<td align=\"center\">$ext_detail[2]</td>\n";
         }
     }
 

@@ -40,6 +40,11 @@
         $wrets .= fread($socket, 8192);
     }
     fclose($socket);
+
+    echo "Dumping \$wrets<br />\r\n<pre>\r\n";
+    echo var_dump($wrets);
+    echo "\r\n</pre>\r\nEnd \$wrets dump<br />\r\n";
+
     $getitem = 0;
     $lines = explode("\n", $wrets);
     foreach($lines as $line) {
@@ -57,8 +62,8 @@
             $value[$key] = trim($a[1]);
         }
     }
-    echo "<pre>\r\n";
+    echo "<br />Begin parsed dump<br />\r\n<pre>\r\n";
     var_dump($value);
-    echo "\r\n</pre>\r\n";
+    echo "\r\n</pre><br />\r\nEnd parsed Dump\r\n";
 
 ?>
