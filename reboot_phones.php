@@ -3,7 +3,7 @@
 
 <head>
 <meta charset="utf-8">
-<title>Reload Yealink Phones</title>
+<title>Reboot &amp; Reload Phones</title>
 <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
 </head>
 
@@ -57,7 +57,6 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     <form enctype="multipart/form-data" method="post" action=<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
 
     <!-- begin table -->
-    <center>
     <table border="1" cellspacing="3" cellpadding="3">
         <thead>
             <tr>
@@ -87,12 +86,15 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
             echo "\t\t\t<td align=\"center\">$ext_detail[2]</td>\n";
         }
     }
-    print "</tbody>\n";
-    print "</table>\n"; // end table
-    print "<br>\n";
-    print "<p align=\"center\"><input type=\"submit\" name=\"submit\" value=\"Reload\">&nbsp;";
-    print "<input type=\"submit\" name=\"submit\" value=\"Reboot\"></p>";
-    echo "</fieldset>";
+    echo "</tbody>\n";
+    echo "</table>\n"; // end table
+    echo "<br>\n";
+    echo "<p align=\"center\"><input type=\"submit\" name=\"reload\" value=\"Reload\">";
+    echo "<input type=\"submit\" name=\"reboot\" value=\"Reboot\"></p>";
+    echo "\n</form>";
+    echo "\n</fieldset>";
+    echo "\n</center>";
+
     $astman->Logout();
 } else {
     ?>
