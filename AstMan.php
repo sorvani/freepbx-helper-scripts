@@ -81,13 +81,7 @@ class AstMan {
         $socket = $this->socket;
         while (!feof($socket)) {
             $tmpData=fread($socket,8192);
-            //echo "$tmpData\n\r";
             $wrets .= $tmpData;
-            //echo "<td colspan=3>Length of data is ".strlen($tmpData)."</td>";
-
-            //$wrets .= fread($socket, 8192);
-           // if (!feof($socket)) {echo "FEOF says FALSE\n\r$tmpData\n\r";}
-
         }
         return $wrets;
     }
@@ -184,16 +178,11 @@ class AstMan {
         } else {
             $item = "";
             $getitem = 0;
-	    //echo "WRETS Says: <br>";
-	    //echo $wrets;
-
             $lines = explode("\n", $wrets);
             foreach($lines as $line) {
-		//echo "Line says: $line\n\r<br>";
                 $a = explode(":", $line, 2);
 	        $key=trim($a[0]);
 	        $key_value=trim($a[1]);
-		//echo "$key = $key_value\n\r<br>";
                 if (trim($a[0]) == "Event") {
                     if (trim($a[1]) == "ContactStatusDetail") {
                         $getitem = 1;
@@ -204,11 +193,8 @@ class AstMan {
                 if ($getitem == 1 && strlen(trim($a[0]))) {
                     $key = trim($a[0]);
                     $item[$key] = trim($a[1]);
-		    //echo "Key = ".trim($a[1]);
- 
                 }
             }
-	    //echo "<hr>";
             return $item;
         }
     }
