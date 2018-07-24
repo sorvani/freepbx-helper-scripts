@@ -10,6 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             sleep(1);
             echo "<center>$extension_value</center>\n";
         }
+        echo "Done.";
     }
 
 }

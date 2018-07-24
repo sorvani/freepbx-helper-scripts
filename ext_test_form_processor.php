@@ -54,6 +54,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ?>
 <form enctype="multipart/form-data" method="post" action=<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
             <?php 
+            foreach ($extension as $extension_value) {
+                echo "\n<input type=\"hidden\" name=\"extension[]\" value=\"$extension_value\">";
+            }
             echo "\n<br>\n<p align=\"center\"><input type=\"submit\" name=\"confirm\" value=\"Confirm REBOOT\"></p>";
             echo "\n</form>";
             echo "\n</fieldset>";
