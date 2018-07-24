@@ -45,6 +45,7 @@ class AstMan {
     }
   
     function Logout() {
+	$wrets="";
         if ($this->socket) {
             fputs($this->socket, "Action: Logoff\r\n\r\n");
             while (!feof($this->socket)) {
@@ -57,6 +58,7 @@ class AstMan {
     }
 
     function Query($query) {
+	$wrets="";
         if ($this->socket === FALSE)
             return FALSE;
 
@@ -65,19 +67,27 @@ class AstMan {
             $line = fgets($this->socket, 4096);
             $wrets .= $line;
             $info = stream_get_meta_data($this->socket);
-        } while ($info['timed_out'] == false);
-        //} while ($line != "\r\n" && $info['timed_out'] == false );
+        //} while ($info['timed_out'] == false);
+        } while (!feof($this->socket) && $info['timed_out'] == false );
         return $wrets;
     }
 
     function QueryFull($query) {
+        $wrets="";
         if ($this->socket === FALSE)
             return FALSE;
 
         fputs($this->socket, $query);
         $socket = $this->socket;
         while (!feof($socket)) {
-            $wrets .= fread($socket, 8192);
+            $tmpData=fread($socket,8192);
+            //echo "$tmpData\n\r";
+            $wrets .= $tmpData;
+            //echo "<td colspan=3>Length of data is ".strlen($tmpData)."</td>";
+
+            //$wrets .= fread($socket, 8192);
+           // if (!feof($socket)) {echo "FEOF says FALSE\n\r$tmpData\n\r";}
+
         }
         return $wrets;
     }
@@ -167,16 +177,23 @@ class AstMan {
 
     function PJSIPShowEndpoint($extension) {
         //$extension must only be a single extension
-        $wrets = $this->QueryFull("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
+        $wrets = $this->Query("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
         if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
         } else {
             $item = "";
             $getitem = 0;
+	    //echo "WRETS Says: <br>";
+	    //echo $wrets;
+
             $lines = explode("\n", $wrets);
             foreach($lines as $line) {
+		//echo "Line says: $line\n\r<br>";
                 $a = explode(":", $line, 2);
+	        $key=trim($a[0]);
+	        $key_value=trim($a[1]);
+		//echo "$key = $key_value\n\r<br>";
                 if (trim($a[0]) == "Event") {
                     if (trim($a[1]) == "ContactStatusDetail") {
                         $getitem = 1;
@@ -187,8 +204,11 @@ class AstMan {
                 if ($getitem == 1 && strlen(trim($a[0]))) {
                     $key = trim($a[0]);
                     $item[$key] = trim($a[1]);
+		    //echo "Key = ".trim($a[1]);
+ 
                 }
             }
+	    //echo "<hr>";
             return $item;
         }
     }

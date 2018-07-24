@@ -51,7 +51,7 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
 
     <!-- begin table -->
     <center>
-    <table border="1" cellspacing="3" cellpadding="3">
+     <table border="1" cellspacing="3" cellpadding="3">
         <thead>
             <tr>
                 <th><center><h4>Selected</h4></center></th>
@@ -70,7 +70,7 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     foreach($matches[1] as $item => $value) {
         if($value >= $f_ext && $value <= $l_ext) {
-            echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension\" value=\"$value\"></td>\n";
+	    echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension\" value=\"$value\"></td>\n";
             echo "\t\t\t<td align=\"center\"><strong>$value</strong></td>\n";
             $useragent = "";
             $useragent = $astman->PJSIPShowEndpoint($value);
@@ -78,9 +78,16 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
             echo "\t\t\t<td align=\"center\">$ext_detail[0]</td>\n";
             echo "\t\t\t<td align=\"center\">$ext_detail[1]</td>\n";
             echo "\t\t\t<td align=\"center\">$ext_detail[2]</td>\n";
+
+            
+            //echo "Loading Extension $value<br>";
+            //$ext_detail=$astman->PJSIPShowEndpoint($value);
+	    //echo "User agent is ".$ext_detail['UserAgent']."<hr>";
+            
+            
+	    
         }
     }
-
     print "</tbody>\n";
     print "</table>\n"; // end table
     print "<br>\n";
