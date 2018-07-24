@@ -55,7 +55,7 @@ class AstMan {
         }
         return;
     }
-  
+
     function Query($query) {
         if ($this->socket === FALSE)
             return FALSE;
@@ -65,7 +65,20 @@ class AstMan {
             $line = fgets($this->socket, 4096);
             $wrets .= $line;
             $info = stream_get_meta_data($this->socket);
-        } while ($line != "\r\n" && $info['timed_out'] == false );
+        } while ($info['timed_out'] == false);
+        //} while ($line != "\r\n" && $info['timed_out'] == false );
+        return $wrets;
+    }
+
+    function QueryFull($query) {
+        if ($this->socket === FALSE)
+            return FALSE;
+
+        fputs($this->socket, $query);
+        $socket = $this->socket;
+        while (!feof($socket)) {
+            $wrets .= fread($socket, 8192);
+        }
         return $wrets;
     }
 
@@ -154,31 +167,20 @@ class AstMan {
 
     function PJSIPShowEndpoint($extension) {
         //$extension must only be a single extension
-        echo "Function running on $extension<br>\r\n";
-        $wrets = $this->Query("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
+        $wrets = $this->QueryFull("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
         if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
         } else {
-            echo "Successfully pulled information for $extension<br />\r\n";
-            echo "Dumping \$wrets from AstMan function<br />\r\n";
-            echo "<pre>\r\n";
-            echo var_dump($wrets);
-            echo "</pre>\r\n";
             $item = "";
             $getitem = 0;
             $lines = explode("\n", $wrets);
             foreach($lines as $line) {
                 $a = explode(":", $line, 2);
-                echo "Dumping \$a <br />\r\n<pre>\r\n";
-                var_dump($a);
-                echo "\r\n</pre>\r\n";
                 if (trim($a[0]) == "Event") {
                     if (trim($a[1]) == "ContactStatusDetail") {
-                        echo "Turning on \$getitem<br />\r\n";
                         $getitem = 1;
                     } else {
-                        echo "Turning off \$getitem<br />\r\n";
                         $getitem = 0;
                     }
                 }
@@ -187,8 +189,8 @@ class AstMan {
                     $item[$key] = trim($a[1]);
                 }
             }
+            return $item;
         }
-    return $item;
     }
 }
 ?>
