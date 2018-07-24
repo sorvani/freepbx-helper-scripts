@@ -80,7 +80,6 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
             echo "\t\t\t<td align=\"center\">$ext_detail[2]</td>\n";
         }
     }
-
     print "</tbody>\n";
     print "</table>\n"; // end table
     print "<br>\n";

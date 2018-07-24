@@ -45,6 +45,7 @@ class AstMan {
     }
   
     function Logout() {
+	$wrets="";
         if ($this->socket) {
             fputs($this->socket, "Action: Logoff\r\n\r\n");
             while (!feof($this->socket)) {
@@ -57,6 +58,7 @@ class AstMan {
     }
 
     function Query($query) {
+	$wrets="";
         if ($this->socket === FALSE)
             return FALSE;
 
@@ -65,19 +67,21 @@ class AstMan {
             $line = fgets($this->socket, 4096);
             $wrets .= $line;
             $info = stream_get_meta_data($this->socket);
-        } while ($info['timed_out'] == false);
-        //} while ($line != "\r\n" && $info['timed_out'] == false );
+        } while ($line != "\r\n" && $info['timed_out'] == false );
+        //} while (!feof($this->socket) && $info['timed_out'] == false );
         return $wrets;
     }
 
     function QueryFull($query) {
+        $wrets="";
         if ($this->socket === FALSE)
             return FALSE;
 
         fputs($this->socket, $query);
         $socket = $this->socket;
         while (!feof($socket)) {
-            $wrets .= fread($socket, 8192);
+            $tmpData=fread($socket,8192);
+            $wrets .= $tmpData;
         }
         return $wrets;
     }
@@ -167,7 +171,7 @@ class AstMan {
 
     function PJSIPShowEndpoint($extension) {
         //$extension must only be a single extension
-        $wrets = $this->QueryFull("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
+        $wrets = $this->Query("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
         if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
@@ -177,6 +181,8 @@ class AstMan {
             $lines = explode("\n", $wrets);
             foreach($lines as $line) {
                 $a = explode(":", $line, 2);
+	        $key=trim($a[0]);
+	        $key_value=trim($a[1]);
                 if (trim($a[0]) == "Event") {
                     if (trim($a[1]) == "ContactStatusDetail") {
                         $getitem = 1;
