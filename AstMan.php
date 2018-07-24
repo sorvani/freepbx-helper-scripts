@@ -163,6 +163,7 @@ class AstMan {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
         } else {
+            echo "Successfully pulled information for $extension<br>\r\n";
             $getitem = 0;
             $lines = explode("\n", $wrets);
             foreach($lines as $line) {
