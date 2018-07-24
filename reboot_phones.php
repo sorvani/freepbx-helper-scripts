@@ -12,6 +12,9 @@ require_once 'AstMan.php';
 
 $astman=new AstMan;
 
+//including the php files that process the form
+include "ext_test_form_processor.php";
+include "ext_test_form_processor_confirm.php";
 
 // Some initial sample code found at https://www.voip-info.org/asterisk-manager-example:-php
 // amportal.conf code modified from https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/yl.php
@@ -48,6 +51,10 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
 
     <center>
     <fieldset style="width:270px"><legend class="legendtitle">Select extension(s) to reboot or reload:</legend>
+
+<!-- Start of form, uses built-in htmlspecialchars security function as added precaution:
+    http://php.net/manual/en/function.htmlspecialchars.php -->
+    <form enctype="multipart/form-data" method="post" action=<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>>
 
     <!-- begin table -->
     <center>
@@ -89,29 +96,12 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     $astman->Logout();
 } else {
     ?>
-    <center>
-    <table border="1" cellspacing="3" cellpadding="3">
-    <thead>
-        <tr>
-            <th><center><h4>Submision Results:</h4></th>
-        </tr>
-    </thead>
-    <tbody>
 
 <?php 
-
-// Submission results
-    print "\t\t<tr>\n\t\t\t<td>Placeholder for later...</td>\n\t\t</tr>\n";
-    print "</tbody>\n";
-    echo "</table>";
 
 }
 
 ?>
-
-</center>
-
-</form>
 
 </body>
 
