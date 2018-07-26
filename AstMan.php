@@ -67,9 +67,7 @@ class AstMan {
             $line = fgets($this->socket, 4096);
             $wrets .= $line;
             $info = stream_get_meta_data($this->socket);
-        //} while ($line != "\r\n" && $info['timed_out'] == false );
-        // This updated loop needs tested with original functions (GetDB, etc.)
-        } while (!feof($this->socket) && $info['timed_out'] == false );
+        } while ($line != "\r\n" && $info['timed_out'] == false );
         return $wrets;
     }
 
@@ -80,11 +78,11 @@ class AstMan {
             return FALSE;
 
         fputs($this->socket, $query);
-        $socket = $this->socket;
-        while (!feof($socket)) {
-            $tmpData=fread($socket,8192);
-            $wrets .= $tmpData;
-        }
+        do {
+            $line = fgets($this->socket, 4096);
+            $wrets .= $line;
+            $info = stream_get_meta_data($this->socket);
+        } while ($info['unread_bytes'] > 0 && $info['timed_out'] == false);
         return $wrets;
     }
 
@@ -145,7 +143,7 @@ class AstMan {
     }
 
     function GetEndpointsPJSIP() {
-        $wrets = $this->Query("Action: Command\r\nCommand: pjsip list endpoints\r\n\r\n");
+        $wrets = $this->QueryFull("Action: Command\r\nCommand: pjsip list endpoints\r\n\r\n");
         if (strpos($wrets, "Output: Objects found: ") != FALSE){
             return $wrets;
         }
@@ -173,9 +171,7 @@ class AstMan {
 
     function PJSIPShowEndpoint($extension) {
         //$extension must only be a single extension
-        $wrets = $this->Query("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
-        // Currently does not return loop ever.
-        //$wrets = $this->QueryFull("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
+        $wrets = $this->QueryFull("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
         if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
