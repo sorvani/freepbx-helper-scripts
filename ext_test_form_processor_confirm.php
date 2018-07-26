@@ -8,9 +8,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $astman->Login();
         foreach ($extension as $extension_value) {
             if ($astman->ReloadYealink($extension_value)) {
-                echo "<center>NOTIFY sent to $extension_value</center<br />\r\n";
+                echo "<center>NOTIFY sent to $extension_value</center><br />\r\n";
             } else {
-                echo "<center>NOTIFY failed to $extension_value</center<br />\r\n";
+                echo "<center>NOTIFY failed to $extension_value</center><br />\r\n";
             }
         }
         $astman->Logout();
@@ -22,9 +22,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $astman->Login();
         foreach ($extension as $extension_value) {
             if ($astman->RebootYealink($extension_value)) {
-                echo "<center>NOTIFY sent to $extension_value</center<br />\r\n";
+                echo "<center>NOTIFY sent to $extension_value</center><br />\r\n";
             } else {
-                echo "<center>NOTIFY failed to $extension_value</center<br />\r\n";
+                echo "<center>NOTIFY failed to $extension_value</center><br />\r\n";
             }
         }
         $astman->Logout();
