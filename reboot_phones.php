@@ -5,6 +5,26 @@
 <meta charset="utf-8">
 <title>Reboot &amp; Reload Phones</title>
 <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
+<style>
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    text-align: left;
+    padding: 8px;
+    white-space:nowrap; 
+}
+
+tr:nth-child(even){background-color: #f2f2f2}
+
+th {
+    background-color: #4CAF50;
+    color: white;
+}
+</style>
+
 </head>
 
 <?php
@@ -76,14 +96,15 @@ if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
 if (!($_SERVER["REQUEST_METHOD"] == "POST")) {
     foreach($matches[1] as $item => $value) {
         if($value >= $f_ext && $value <= $l_ext) {
-            echo "\t\t<tr>\n\t\t\t<td align=\"center\"><input type=\"checkbox\" name=\"extension[]\" value=\"$value\"></td>\n";
-            echo "\t\t\t<td align=\"center\"><strong>$value</strong></td>\n";
+            echo "\t\t<tr>\n\t\t\t<td><input type=\"checkbox\" name=\"extension[]\" value=\"$value\"></td>\n";
+            echo "\t\t\t<td><strong>$value</strong></td>\n";
             $useragent = "";
             $useragent = $astman->PJSIPShowEndpoint($value);
             $ext_detail = explode(" ", $useragent['UserAgent'],3);
-            echo "\t\t\t<td align=\"center\">$ext_detail[0]</td>\n";
-            echo "\t\t\t<td align=\"center\">$ext_detail[1]</td>\n";
-            echo "\t\t\t<td align=\"center\">$ext_detail[2]</td>\n";
+            echo "\t\t\t<td>$ext_detail[0]</td>\n";
+            echo "\t\t\t<td>$ext_detail[1]</td>\n";
+            echo "\t\t\t<td>$ext_detail[2]</td>\n";
+            echo "\t\t</tr>\n";
         }
     }
     echo "</tbody>\n";
