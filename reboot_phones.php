@@ -13,8 +13,8 @@ require_once 'AstMan.php';
 $astman=new AstMan;
 
 //including the php files that process the form
-include "ext_test_form_processor.php";
-include "ext_test_form_processor_confirm.php";
+include "reboot_process.php";
+include "reboot_confirm.php";
 
 // Some initial sample code found at https://www.voip-info.org/asterisk-manager-example:-php
 // amportal.conf code modified from https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/yl.php
