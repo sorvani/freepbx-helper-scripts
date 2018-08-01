@@ -142,7 +142,7 @@ class AstMan {
     }
 
     function GetEndpointsPJSIP() {
-        $wrets = $this->QueryFull("Action: Command\r\nCommand: pjsip list endpoints\r\n\r\n");
+        $wrets = $this->Query("Action: Command\r\nCommand: pjsip list endpoints\r\n\r\n");
         if (strpos($wrets, "Output: Objects found: ") != FALSE){
             return $wrets;
         }
@@ -170,7 +170,7 @@ class AstMan {
 
     function PJSIPShowEndpoint($extension) {
         //$extension must only be a single extension
-        $wrets = $this->QueryFull("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
+        $wrets = $this->QueryEndpoint("Action: PJSIPShowEndpoint\r\nEndpoint: $extension\r\n\r\n");
         if (strpos($wrets,"Unable to retrieve endpoint") != FALSE) {
             $this->error = "Failed to get data for extension $extension";
             return FALSE;
