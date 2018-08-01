@@ -71,8 +71,7 @@ class AstMan {
         return $wrets;
     }
 
-    // this loop is still never returning.
-    function QueryFull($query) {
+    function QueryEndpoint($query) {
         $wrets="";
         if ($this->socket === FALSE)
             return FALSE;
@@ -82,7 +81,7 @@ class AstMan {
             $line = fgets($this->socket, 4096);
             $wrets .= $line;
             $info = stream_get_meta_data($this->socket);
-        } while ($info['unread_bytes'] > 0 && $info['timed_out'] == false);
+        } while ($line != "Event: EndpointDetailComplete\r\n" && $info['timed_out'] == false);
         return $wrets;
     }
 
