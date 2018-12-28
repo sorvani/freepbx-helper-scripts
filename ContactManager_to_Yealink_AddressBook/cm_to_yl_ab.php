@@ -2,6 +2,9 @@
 /*
 The purpose of this file is to read all the Contact Manager entries for the specified group
 and then output them in a Yealink Remote Address Book formatted XML syntax.
+
+Instructions on how to use can be found here:
+https://mangolassi.it/topic/18647/freepbx-contact-manager-to-yealink-address-book
 */
 
 // Edit this varibale to match the name of hte group in Contact Manager
