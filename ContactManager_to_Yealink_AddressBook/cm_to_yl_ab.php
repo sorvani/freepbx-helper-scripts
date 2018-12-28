@@ -1,11 +1,11 @@
 <?php
-/* 
-ylab.php (short for yealink address book) was taken directly from yl.php and modified.
-https://github.com/sorvani/freepbx-helper-scripts/blob/master/yl.php
-
-The purpose of this file is to read all the extensions in the system and then output them in a
-Yealink Remote Address Book formatted XML syntax.
+/*
+The purpose of this file is to read all the Contact Manager entries for the specified group
+and then output them in a Yealink Remote Address Book formatted XML syntax.
 */
+
+// Edit this varibale to match the name of hte group in Contact Manager
+$contact_manager_group = "SomeName";
 
 header("Content-Type: text/xml");
 
@@ -31,8 +31,8 @@ $datasource = 'mysql://'.$db_user.':'.$db_pass.'@'.$db_host.'/'.$db_name;
 $db = DB::connect($datasource); // attempt connection
 
 $type="getAll";
-// This pulls every number in contact maanger that is not part of the default "User Manager Group"
-$results = $db->$type("SELECT cen.number, cge.displayname FROM contactmanager_group_entries AS cge LEFT JOIN contactmanager_entry_numbers AS cen ON cen.entryid = cge.id WHERE cge.groupid = (SELECT cg.id FROM contactmanager_groups AS cg WHERE cg.name != 'User Manager Group');", null);
+// This pulls every number in contact maanger that is part of the group specified by $contact_manager_group
+$results = $db->$type("SELECT cen.number, cge.displayname FROM contactmanager_group_entries AS cge LEFT JOIN contactmanager_entry_numbers AS cen ON cen.entryid = cge.id WHERE cge.groupid = (SELECT cg.id FROM contactmanager_groups AS cg WHERE cg.name = '$contact_manager_group');", null);
 
 //dump the result into an array.
 foreach($results as $result){
