@@ -1,0 +1,12 @@
+Things to add that are just PHP 
+ - Select All/None to Select column
+ - Select All/None by Manufacturer (super low priority as this is designed only for Yealink right now)
+ - Select All/None by Model
+ - Filter by Manufacturer
+ - Filter by Model
+ - Way to specify the Extension range in the GUI (and have it be persistent)
+ - Sort columns
+ 
+Things to add that require changes related to Asterisk
+ - Get public and local IP of extension and show in a column
+ - Keep multiple registrations separate
