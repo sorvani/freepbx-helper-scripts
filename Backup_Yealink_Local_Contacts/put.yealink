@@ -1,0 +1,47 @@
+<?php
+// 100% credit for this goes to FreePBX dev Rob Thomas for 
+// creating this repository to deal with Polycom phones alsoways 
+// having to uploag logs: https://github.com/xrobau/polyput
+
+// Minor modifications were made to put.poly and renamed as put.yealink
+
+// What have we been asked to PUT?
+$file=basename($_SERVER['REQUEST_URI']);
+
+// Split it out into pieces ($out) or fail.
+if (!preg_match("/^([0-9a-f]+)-(contact)\.(xml)$/", $file, $out)) {
+  header("HTTP/1.1 400 Invalid URI");
+  print json_encode($out);
+  exit;
+}
+
+$mac = $out[1];
+
+//Validate the MAC address is at least not all 0's
+if ($mac == "000000000000") {
+  header("HTTP/1.1 405 Invalid MAC");
+  print json_encode($out);
+  exit;
+}
+
+$filename = $mac."-".$out[2].".".$out[3];
+
+// if it is a contact xml file, setup to write it out, otherwise die.
+if ($out[3] == "xml" && $out[2] == "contact") {
+  $output = __DIR__."/$filename";
+  $mode = "w";
+} else {
+  header("HTTP/1.1 405 Invalid contact file name");
+  print json_encode($out);
+  exit;
+}
+
+// write the contact file out.
+$in = fopen("php://input", "r");
+$out = fopen($output, $mode);
+while ($data = fread($in, 1024)) {
+    fwrite($out, $data);
+}
+fclose($out);
+fclose($in);
+
