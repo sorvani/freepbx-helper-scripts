@@ -9,9 +9,9 @@
 $file=basename($_SERVER['REQUEST_URI']);
 
 // Split it out into pieces ($out) or fail.
-if (!preg_match("/^([0-9a-f]+)-(contact)\.(xml)$/", $file, $out)) {
+if (!preg_match("/^([0-9a-fA-F]+)-(contact)\.(xml)$/", $file, $out)) {
   header("HTTP/1.1 400 Invalid URI");
-  print json_encode($out);
+  error_log(json_encode($out));
   exit;
 }
 
@@ -20,7 +20,7 @@ $mac = $out[1];
 //Validate the MAC address is at least not all 0's
 if ($mac == "000000000000") {
   header("HTTP/1.1 405 Invalid MAC");
-  print json_encode($out);
+  error_log(json_encode($out));
   exit;
 }
 
@@ -32,7 +32,7 @@ if ($out[3] == "xml" && $out[2] == "contact") {
   $mode = "w";
 } else {
   header("HTTP/1.1 405 Invalid contact file name");
-  print json_encode($out);
+  error_log(json_encode($out));
   exit;
 }
 
