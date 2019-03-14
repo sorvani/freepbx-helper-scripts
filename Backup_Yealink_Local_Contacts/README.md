@@ -13,3 +13,4 @@ Simple script that handles PUT requests from Yealink phones in order to let you 
 7. Reprovision or reboot your phone to pick up the change
 8. Edit your local address once to force it to upload the file
 
+For troubleshooting, errors will log the variable contents to the the apache error_log.
