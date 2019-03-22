@@ -1,5 +1,5 @@
 <?php
-// http://__destination__/custom_aastra/lines.php?ext=$$SIPUSERNAME$$
+// http://__destination__/show_ring_group_membership.php?ext=$$SIPUSERNAME$$
 /* // Example of the XML structure used by the Aastra display.
 <AastraIPPhoneTextMenu
     defaultIndex = “some integer”
