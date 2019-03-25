@@ -44,7 +44,7 @@
   $show_user_extension = 0;
 
   // Load FreePBX bootstrap environment
-  //require_once('/etc/freepbx.conf');
+  require_once('/etc/freepbx.conf');
 
   // Get the extension that was passed on the URL.
   $extension = $_GET["ext"];
