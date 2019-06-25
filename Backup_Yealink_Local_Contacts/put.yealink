@@ -9,7 +9,7 @@
 $file=basename($_SERVER['REQUEST_URI']);
 
 // Split it out into pieces ($out) or fail.
-if (!preg_match("/^([0-9a-fA-F]+)-(contact)\.(xml)$/", $file, $out)) {
+if (!preg_match("/^([0-9a-fA-F]+)-(contact|local)\.(xml|cf)$/", $file, $out)) {
   header("HTTP/1.1 400 Invalid URI");
   error_log(json_encode($out));
   exit;
@@ -26,8 +26,8 @@ if ($mac == "000000000000") {
 
 $filename = $mac."-".$out[2].".".$out[3];
 
-// if it is a contact xml file, setup to write it out, otherwise die.
-if ($out[3] == "xml" && $out[2] == "contact") {
+// if it is a contact xml file or a local config file, setup to write it out, otherwise die.
+if (($out[3] == "xml" && $out[2] == "contact") || ($out[3] == "cfg" && $out[2] == "local") ) {
   $output = __DIR__."/$filename";
   $mode = "w";
 } else {
