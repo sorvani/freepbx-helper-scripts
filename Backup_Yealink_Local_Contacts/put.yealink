@@ -9,7 +9,7 @@
 $file=basename($_SERVER['REQUEST_URI']);
 
 // Split it out into pieces ($out) or fail.
-if (!preg_match("/^([0-9a-fA-F]+)-(contact|local)\.(xml|cf)$/", $file, $out)) {
+if (!preg_match("/^([0-9a-fA-F]+)-(contact|local)\.(xml|cfg)$/", $file, $out)) {
   header("HTTP/1.1 400 Invalid URI");
   error_log(json_encode($out));
   exit;
