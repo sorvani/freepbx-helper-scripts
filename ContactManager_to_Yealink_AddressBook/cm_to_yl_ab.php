@@ -7,10 +7,30 @@ Instructions on how to use can be found here:
 https://mangolassi.it/topic/18647/freepbx-contact-manager-to-yealink-address-book
 
 Updated December 26, 2019 to use FreePBX bootstrap
+
+Update December 27, 2019
+ - to incorporate changes by mgbolts (from: https://github.com/mgbolts/fpbx-yealink-xmlcontacts)
+ - to incorporate patch to mgbolts version by lacymooretX (from: https://github.com/mgbolts/fpbx-yealink-xmlcontacts/issues/1)
+ - improve logic flow and enable easy use of E164
+
+
+Improvements over original:
+ a) Group all numbers for a common display name
+ b) Sort the order by alpa on the display name
+ c) Add labels to each phone number
+ e) Enable E164 number convention
+ f) Allow the number labels to be customized.
+ g) Now you can specify the contact group in the URL, ex.: https://FQDN/cm_to_yl_ab.php?cgroup=SomeName
+ h) In order to use the E164 formatted number, you must pass a URL variable (e164=1) or change the default below.
+
 */
 
-// Edit this variable to match the name of the group in Contact Manager
-$contact_manager_group = "SomeName";
+// Edit these variables as neeed to:
+// 1. Match the name of the group in Contact Manager or pass the group name in the URL.
+//    1a. The default 'Internal' group is named 'User Manager Group' is using that on the URL, use %20 in place of the spaces.
+// 2. Use E164 by default
+$contact_manager_group = isset($_GET['cgroup']) ? $_GET['cgroup'] : "SomeName"; // <-- Edit "SomeName" to make your own default
+$use_e164 = isset($_GET['e164']) ? $_GET['e164'] : 0; // <-- Edit 0 to 1 to use the E164 formatted numbers by default
 
 header("Content-Type: text/xml");
 
@@ -21,7 +41,7 @@ require_once('/etc/freepbx.conf');
 global $db;
 
 // This pulls every number in contact maanger that is part of the group specified by $contact_manager_group
-$sql = "SELECT cen.number, cge.displayname FROM contactmanager_group_entries AS cge LEFT JOIN contactmanager_entry_numbers AS cen ON cen.entryid = cge.id WHERE cge.groupid = (SELECT cg.id FROM contactmanager_groups AS cg WHERE cg.name = '$contact_manager_group');";
+$sql = "SELECT cen.number, cge.displayname, cen.type, cen.E164, 0 AS 'sortorder' FROM contactmanager_group_entries AS cge LEFT JOIN contactmanager_entry_numbers AS cen ON cen.entryid = cge.id WHERE cge.groupid = (SELECT cg.id FROM contactmanager_groups AS cg WHERE cg.name = '$contact_manager_group');";
 
 // Execute the SQL statement
 $res = $db->prepare($sql);
@@ -31,7 +51,49 @@ if (DB::IsError($res)) {
     // Potentially clean this up so that it outputs pretty if not valid                
     error_log( "There was an error attempting to query contactmanager<br>($sql)<br>\n" . $res->getMessage() . "\n<br>\n");
 } else {
-    $extensions = $res->fetchAll(PDO::FETCH_ASSOC);
+    $contacts = $res->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($contacts as $contact){
+        // The if staements provide the ability to re-lable the phone number type as you wish.
+        // It also allows for setting the number display order to be changed for multi-number contacts.
+        // $contact['type'] will be used as the label
+        // $contact['sortorder'] will be used as the sort order
+
+        if ($contact['type'] == "cell") {
+            $contact['type'] = "Mobile";
+            $contact['sortorder'] = 3;
+        }
+        if ($contact['type'] == "internal") {
+            $contact['type'] = "Extension";  // NOTE: If you change this, it must be changed below for E164 functionality to be correct.
+            $contact['sortorder'] = 1;
+        }
+        if ($contact['type'] == "work") {
+            $contact['type'] = "Work";
+            $contact['sortorder'] = 2;
+        }
+        if ($contact['type'] == "other") {
+            $contact['type'] = "Other"; 
+            $contact['sortorder'] = 4;
+        }
+        if ($contact['type'] == "home") {
+            $contact['type'] = "Home"; 
+            $contact['sortorder'] = 5;
+        }
+    }
+
+    // This sorts the extensions array by two fields, the display name and then the sort order field
+    // To change the sort order of the labels, change the sort order number in the if statements above..
+    $dname = array();
+    $order = array();
+    for ($i = 0; $i < count($contacts); $i++) {
+        $dname[] = $contacts[$i][1];
+        $sorder[] = $contacts[$i][4];
+    }
+    // now apply sort
+    array_multisort($dname, SORT_ASC,
+        $sorder, SORT_ASC, SORT_NUMERIC,
+        $contacts);
+
     // output the XML header info
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // Output the XML root. This tag must be in the format XXXIPPhoneDirectory
@@ -40,12 +102,30 @@ if (DB::IsError($res)) {
 
     // Loop through the results and output them correctly.
     // Spacing is setup below in case you wish to look at the result in a browser.
-    foreach ($extensions as $extension) {
-        echo "    <DirectoryEntry>\n";
-        echo "        <Name>" . $extension['displayname'] . "</Name>\n";
-        echo "        <Telephone>" . $extension['number'] . "</Telephone>\n";
-        echo "    </DirectoryEntry>\n";
+    $previousname = "";
+    $firstloop = 1;
+    foreach ($contacts as $contact) {
+        if ($contact['displayname'] != $previousname) {
+            if ($firstloop == 0){
+                // close the previous entry
+                echo "    </DirectoryEntry>\n";
+            }
+            // Start the next entry
+            echo "    <DirectoryEntry>\n";
+            echo "        <Name>" . $contact['displayname'] . "</Name>\n";
+            // mark that we left the first loop.
+            $firstloop = 0;
+        }
+        if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == "Extension")) { // if this label was changed above, change it here
+            // not using E164 or it is an internal extnsion
+            echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['number'] . "</Telephone>\n";
+        } else {
+            // using E164
+            echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['E164'] . "</Telephone>\n";
+        }
     }
+    // Close the last entry.
+    echo "    </DirectoryEntry>\n";
     // Output the closing tag of the root. If you changed it above, make sure you change it here.
     echo "</CompanyIPPhoneDirectory>\n";
 }
