@@ -17,12 +17,12 @@ require_once('/etc/freepbx.conf');
 // Initialize a database connection
 global $db;
 
-// This pulls every extension in the systm. Including virtual mailboxes and is a recmmended default
+// This pulls every extension in the systm. Including virtual mailboxes and is a recommended default
 $sql = "SELECT `id`,`description` FROM `devices`;";
 // You can restrict the output with standard SQL syntax
 // This example only shows extensions prior to 200 and not virtual mailboxes
 // $sql = "SELECT `id`,`description` FROM `devices` WHERE `id` < 200 AND `tech` <> 'custom';";
-// This example will pull all extensions form 1000 to 1999
+// This example will pull all extensions from 1000 to 1999
 // $sql = "SELECT `id`,`description` FROM `devices` WHERE `id` BETWEEN 1000 and 1999;";
 
 // Execute the SQL statement
