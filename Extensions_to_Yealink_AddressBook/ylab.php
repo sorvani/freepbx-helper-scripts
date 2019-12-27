@@ -31,7 +31,7 @@ $res->execute();
 // Check that something is returned
 if (DB::IsError($res)) {
     // Potentially clean this up so that it outputs pretty if not valid                
-    error_log( "There was an error attampting to query the extensoins<br>($sql)<br>\n" . $res->getMessage() . "\n<br>\n");
+    error_log( "There was an error attempting to query the extensions<br>($sql)<br>\n" . $res->getMessage() . "\n<br>\n");
 } else {
     $extensions = $res->fetchAll(PDO::FETCH_ASSOC);
     // output the XML header info
