@@ -109,12 +109,15 @@ if (DB::IsError($res)) {
             if ($firstloop == 0){
                 // close the previous entry
                 echo "    </DirectoryEntry>\n";
+            } else {
+                // note that we hit the first loop
+                $firstloop = 0;
             }
-            // Start the next entry
+            // Start the entry
             echo "    <DirectoryEntry>\n";
             echo "        <Name>" . $contact['displayname'] . "</Name>\n";
-            // mark that we left the first loop.
-            $firstloop = 0;
+            // set the current name to the previous name
+            $previousname = $contact['displayname'];
         }
         if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == "Extension")) { // if this label was changed above, change it here
             // not using E164 or it is an internal extnsion
