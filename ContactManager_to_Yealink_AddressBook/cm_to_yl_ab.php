@@ -16,7 +16,7 @@ Update December 27, 2019
 
 Improvements over original:
  a) Group all numbers for a common display name
- b) Updated SQL to order by name
+ b) Updated SQL to order by displayname
  c) Add labels to each phone number
  e) Enable E164 number convention
  f) Allow the number labels to be customized.
