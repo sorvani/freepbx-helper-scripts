@@ -10,7 +10,7 @@ Updated December 26, 2019 to use FreePBX bootstrap
 
 Update December 27, 2019
  - to incorporate changes by mgbolts (from: https://github.com/mgbolts/fpbx-yealink-xmlcontacts)
- - to incorporate patch to mgbolts version by lacymooretX (from: https://github.com/mgbolts/fpbx-yealink-xmlcontacts/issues/1)
+ - to incorporate patch to mgbolts version by susedv (from: https://github.com/mgbolts/fpbx-yealink-xmlcontacts/issues/1)
  - improve logic flow and enable easy use of E164
 
 
