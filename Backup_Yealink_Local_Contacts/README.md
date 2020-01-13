@@ -32,4 +32,8 @@ To start, follow steps 1-4 above if you have not already done it for the contact
          2. `static.auto_provision.server.password = PASSWORD`
    4. Or if you have the Commerical EPM use this in basfile edit: `__provisionAddress__`
    
+   
+Discussion:
+https://www.mangolassi.it/topic/19086/how-to-backup-your-yealink-local-contacts-to-the-freepbx-provisioning-directory
+https://www.mangolassi.it/topic/19865/how-to-tell-yealink-phones-to-upload-user-changes-to-the-freepbx-provisioning-directory
 
