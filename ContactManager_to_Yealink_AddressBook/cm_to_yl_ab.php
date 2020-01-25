@@ -89,6 +89,7 @@ if (DB::IsError($res)) {
             $contact['type'] = $ctype['home'];
             $contact['sortorder'] = 5;
         }
+        $contact['displayname'] = htmlspecialchars($contact['displayname']);
         // put the changes back into $contacts
         $contacts[$i] = $contact;
     }
