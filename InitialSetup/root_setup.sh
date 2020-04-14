@@ -29,7 +29,7 @@ sed -i 's/#\?\(PasswordAuthentication\s*\).*$/\1 no/' /etc/ssh/sshd_config
 systemctl restart sshd
 
 # Pre download the setup script into the user's home directory.
-wget -O /home/$myUserName/ https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/InitialSetup/setup.sh
+wget -O /home/$myUserName/setup.sh https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/InitialSetup/setup.sh
 chown $myUserName:$myUserName /home/$myUserName/setup.sh
 chmod +x /home/$myUserName/setup.sh
 
