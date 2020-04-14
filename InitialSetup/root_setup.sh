@@ -28,4 +28,11 @@ sed -i 's/#\?\(PasswordAuthentication\s*\).*$/\1 no/' /etc/ssh/sshd_config
 # Restart SSH service to apply changes
 systemctl restart sshd
 
-echo "Root setup complete. Please log out from the root user and continue with the user just set up."
+# Pre download the setup script into the user's home directory.
+wget -O /home/$myUserName/ https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/InitialSetup/setup.sh
+chown $myUserName:$myUserName /home/$myUserName/setup.sh
+chmod +x /home/$myUserName/setup.sh
+
+echo "Root setup complete."
+echo "Please log out from the root user and login, via SSH, with username: $myUserName."
+echo "Then execute 'sudo ./setup.sh'"
