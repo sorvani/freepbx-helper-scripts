@@ -1,14 +1,18 @@
 #!/bin/bash
 
 # Prompt for a username and password
+# TODO: change this to a parameter?
 read -p "Enter a new username: " myUserName
-read -s -p "Enter a new password for $myUserName: " myPassword; echo
 
 # Prompt for your GitLab username
+# TODO: update this to something intelligent....
 read -p "Enter your GitLab username: " myGitLabUsername
 
-# Create user account and add user to wheel and asterisk group
-useradd --create-home $myUserName --password $myPassword
+# Create user account with default password of ChangeMe
+useradd --create-home $myUserName --password $(openssl passwd -1 ChangeMe)
+# expire the password to force reset on first login
+chage -d 0
+# Add user to wheel and asterisk groups
 gpasswd -a $myUserName wheel
 gpasswd -a $myUserName asterisk
 
@@ -19,9 +23,9 @@ chown -R $myUserName:$myUserName /home/$myUserName/.ssh
 chmod 700 /home/$myUserName/.ssh
 chmod 600 /home/$myUserName/.ssh/authorized_keys
 
-# Disable root login
+# Disable root login via ssh
 sed -i 's/#\?\(PerminRootLogin\s*\).*$/\1 no/' /etc/ssh/sshd_config
-# Disable PasswordAuthentication
+# Require key for ssh login
 # Ends up with duplicate PasswordAuthentication because it modifies both #PasswordAuthentication and PasswordAuthentication
 sed -i 's/#\?\(PasswordAuthentication\s*\).*$/\1 no/' /etc/ssh/sshd_config
 
