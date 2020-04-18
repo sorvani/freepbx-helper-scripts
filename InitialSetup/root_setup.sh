@@ -11,7 +11,7 @@ read -p "Enter your GitLab username: " myGitLabUsername
 # Create user account with default password of ChangeMe
 useradd --create-home $myUserName --password $(openssl passwd -1 ChangeMe)
 # expire the password to force reset on first login
-chage -d 0
+chage -d 0 $myUserName
 # Add user to wheel and asterisk groups
 gpasswd -a $myUserName wheel
 gpasswd -a $myUserName asterisk
