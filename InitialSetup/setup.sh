@@ -2,6 +2,8 @@
 echo "Beginning FreePBX 15 initial setup..."
 echo "Updating operating system"
 sudo yum update -y
+echo "Installing git"
+sudo yum install git -y
 echo "Removing commerical modules, except sysadmin..."
 echo "Removing areminder"
 sudo fwconsole ma delete areminder
@@ -67,3 +69,6 @@ echo "Upgrading all installed modules..."
 sudo fwconsole ma upgradeall
 echo "Reloading FreePBX..."
 sudo fwconsole reload
+echo "Your initial FreePBX command line setup is complete."
+ipaddress=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+echo "Please navigate to https://$ipaddress to complete your setup."
