@@ -39,4 +39,5 @@ chmod +x /home/$myUserName/setup.sh
 
 echo "Root setup complete."
 echo "Please log out from the root user and login, via SSH, with username: $myUserName."
+echo "You will be required to change your password. It is currently set to: ChangeMe"
 echo "Then execute 'sudo ./setup.sh'"
