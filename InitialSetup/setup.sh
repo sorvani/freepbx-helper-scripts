@@ -9,6 +9,8 @@ echo "Removing areminder"
 sudo fwconsole ma delete areminder
 echo "Removing broadcast"
 sudo fwconsole ma delete broadcast
+echo "Removing callaccounting"
+sudo fwconsole ma delete callaccounting
 echo "Removing callerid"
 sudo fwconsole ma delete callerid
 echo "Removing calllimit"
@@ -59,8 +61,13 @@ echo "Removing sms"
 sudo fwconsole ma delete sms
 echo "Removing cos"
 sudo fwconsole ma delete cos
+echo "Removing rarely needed OpenSource modules"
 echo "Removing cxpanel"
 sudo fwconsole ma delete cxpanel
+echo "Removing digium_phones"
+sudo fwconsole ma delete digium_phones
+echo "Removing digiumaddoninstaller"
+sudo fwconsole ma delete digiumaddoninstaller
 echo "Reloading FreePBX..."
 sudo fwconsole reload
 echo "Enabling commerical repository..."
@@ -71,4 +78,4 @@ echo "Reloading FreePBX..."
 sudo fwconsole reload
 echo "Your initial FreePBX command line setup is complete."
 ipaddress=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
-echo "Please navigate to https://$ipaddress to complete your setup."
+echo "Please navigate to https://$ipaddress of our FQDN to complete your setup."
