@@ -68,6 +68,8 @@ echo "Removing digium_phones"
 sudo fwconsole ma delete digium_phones
 echo "Removing digiumaddoninstaller"
 sudo fwconsole ma delete digiumaddoninstaller
+echo "Removing irc"
+sudo fwconsole ma delete irc
 echo "Reloading FreePBX..."
 sudo fwconsole reload
 echo "Enabling commerical repository..."
