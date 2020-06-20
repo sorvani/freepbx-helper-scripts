@@ -6,7 +6,7 @@ read -p "Enter a new username to use for SSH access: " myUserName
 
 # Prompt for your GitLab username
 # TODO: update this to something intelligent....
-echo "For now the repo is hard coded and expecting that you have a repo named 'public_keys' containing the file `authorized_keys` in the master branch."
+echo "For now the is hard coded and expecting that you have a GitLab repo named 'public_keys' containing the file 'authorized_keys' in the master branch."
 echo "\n\n"
 read -p "Enter your GitLab username: " myGitLabUsername
 
@@ -26,7 +26,7 @@ chmod 700 /home/$myUserName/.ssh
 chmod 600 /home/$myUserName/.ssh/authorized_keys
 
 # Disable root login via ssh
-echo "Disabling root loging to SSH as well as password login to SSH."
+echo "Disabling root login to SSH as well as password login to SSH."
 sed -i 's/#\?\(PerminRootLogin\s*\).*$/\1 no/' /etc/ssh/sshd_config
 # Require key for ssh login
 # Ends up with duplicate PasswordAuthentication because it modifies both #PasswordAuthentication and PasswordAuthentication
