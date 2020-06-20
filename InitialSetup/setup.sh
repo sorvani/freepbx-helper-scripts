@@ -80,4 +80,4 @@ echo "Reloading FreePBX..."
 sudo fwconsole reload
 echo "Your initial FreePBX command line setup is complete."
 ipaddress=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
-echo "Please navigate to https://$ipaddress of our FQDN to complete your setup."
+echo "Please navigate to https://$ipaddress or https://YOURFQDN to complete your setup."
