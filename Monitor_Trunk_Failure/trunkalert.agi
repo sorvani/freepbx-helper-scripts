@@ -4,7 +4,7 @@
 ### Setup Instructions         ###
 ##################################
 # 1. Put this file on your PBX in the directory /var/lib/asterisk/agi-bin/
-#    sudo wget -O /var/lib/asterisk/agi-bin/trunkalert.agi #add url after commit#
+#    sudo wget -O /var/lib/asterisk/agi-bin/trunkalert.agi https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/Monitor_Trunk_Failure/trunkalert.agi
 # 2. Edit the downloaded file to have the email addresses you need.
 #    sudo nano /var/lib/asterisk/agi-bin/trunkalert.agi
 # 2. Set the file to the correct permissions 
