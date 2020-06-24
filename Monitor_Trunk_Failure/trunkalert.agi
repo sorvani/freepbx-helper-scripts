@@ -1,0 +1,58 @@
+#!/bin/bash
+
+##################################
+### Setup Instructions         ###
+##################################
+# 1. Put this file on your PBX in the directory /var/lib/asterisk/agi-bin/
+#    sudo wget -O /var/lib/asterisk/agi-bin/trunkalert.agi #add url after commit#
+# 2. Edit the downloaded file to have the email addresses you need.
+#    sudo nano /var/lib/asterisk/agi-bin/trunkalert.agi
+# 2. Set the file to the correct permissions 
+#    sudo fwconsole chown
+# 3. In the web interface, edit your trunk and put this in the "Monitor Trunk Failures" field
+#    trunkalert.agi,YOURTRUNKNAME
+# 4. Change the No to Yes under the "Monitor Trunk Failures" field
+# 5. Submit
+# 6. Apply Config
+
+##################################
+### Set these values as needed ###
+##################################
+EMAIL_FROM=yourpbxemail@domain.com
+EMAIL_TO=alertemail@domain.com
+# If the system hostname is not clear, change this to be whatever you want
+HOST=`hostname`
+
+##################################
+### No more editing required   ###
+##################################
+
+# Variable to hold the details for the log file
+DUMPARG=" Begin Argument dump:\n"
+# Create an Array to hold the results of the loop
+declare -a array
+# Loop through the AGI variables
+while read -e ARG && [ "$ARG" ] ; do
+ # Dump them into an array, after removing the :
+ array=(` echo $ARG | sed -e 's/://'`)
+ # take the array and create a variable from the first element put the rest as the value
+ # value must be put into a holding variable to parse correctly by the export command due the possibility of havine a space in the value
+ val=${array[@]:1}
+ export ${array[0]}="$val"
+ # Dump them into a string for the log file
+ DUMPARG="$DUMPARG $ARG\n"
+done
+
+DATE=`date "+%Y.%m.%d %H:%M:%S"`
+# Put together a human readable message
+MSG=" At $DATE, a call has failed to dial out.\n"
+MSG="$MSG The call was attempted from channel [$agi_channel] using the trunk [$agi_arg_1].\n"
+MSG="$MSG The number dialed was [$agi_dnid].\n"
+MSG="$MSG The outbound CID information was [$agi_calleridname] - [$agi_callerid].\n"
+
+# Log to file with more details and copy of the email text
+echo -e "$MSG" >> /var/log/asterisk/trunkfailure.log
+echo -e "$DUMPARG" >> /var/log/asterisk/trunkfailure.log
+
+# Send an email
+echo -e "$MSG" | mail -s "Failed call from system [$HOST] on trunk [$agi_arg_1] when dialing [$agi_dnid]" -r $EMAIL_FROM $EMAIL_TO
