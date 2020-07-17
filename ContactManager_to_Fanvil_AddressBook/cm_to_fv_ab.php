@@ -98,7 +98,7 @@ if (DB::IsError($res)) {
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // Output the XML root. This tag must be in the format XXXIPPhoneDirectory
     // You may change the word Company below, but no other part of the root tag.
-    echo "<FanvilIPPhoneDirectory  clearlight=\"true\">\n";
+    echo "<FanvilIPPhoneDirectory clearlight=\"true\">\n";
  
     // Loop through the results and output them correctly.
     // Spacing is setup below in case you wish to look at the result in a browser.
