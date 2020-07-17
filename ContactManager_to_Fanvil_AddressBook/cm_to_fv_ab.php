@@ -93,20 +93,7 @@ if (DB::IsError($res)) {
         // put the changes back into $contacts
         $contacts[$i] = $contact;
     }
-/*
-    // This sorts the extensions array by two fields, the display name and then the sort order field
-    // To change the sort order of the labels, change the sort order number in the if statements above..
-    $dname = array();
-    $order = array();
-    for ($i = 0; $i < count($contacts); $i++) {
-        $dname[] = $contacts[$i][1];
-        $sorder[] = $contacts[$i][4];
-    }
-    // now apply sort
-    array_multisort($dname, SORT_ASC,
-        $sorder, SORT_ASC, SORT_NUMERIC,
-        $contacts);
-*/
+
     // output the XML header info
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // Output the XML root. This tag must be in the format XXXIPPhoneDirectory
@@ -134,10 +121,10 @@ if (DB::IsError($res)) {
         }
         if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) {
             // not using E164 or it is an internal extnsion
-            echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['number'] . "</Telephone>\n";
+            echo "        <" . $contact['type'] . ">" . $contact['number'] . "</" . $contact['type'] . ">\n";
         } else {
-            // using E164
-            echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['E164'] . "</Telephone>\n";
+            // using E164s
+            echo "        <" . $contact['type'] . ">" . $contact['E164'] . "</" . $contact['type'] . ">\n";
         }
     }
     // Close the last entry.
