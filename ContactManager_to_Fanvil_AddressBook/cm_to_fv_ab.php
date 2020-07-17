@@ -32,7 +32,7 @@ Improvements over original:
 // 3. Customize the label names of the contact types
 $contact_manager_group = isset($_GET['cgroup']) ? $_GET['cgroup'] : "SomeName"; // <-- Edit "SomeName" to make your own default
 $use_e164 = isset($_GET['e164']) ? $_GET['e164'] : 0; // <-- Edit 0 to 1 to use the E164 formatted numbers by default
-$ctype['internal'] = "Extension"; // <-- Edit the right side to display what you want shown
+$ctype['internal'] = "Telephone"; // <-- Edit the right side to display what you want shown
 $ctype['cell'] = "Mobile"; // <-- Edit the right side to display what you want shown
 $ctype['work'] = "Work"; // <-- Edit the right side to display what you want shown
 $ctype['home'] = "Home"; // <-- Edit the right side to display what you want shown
@@ -98,8 +98,9 @@ if (DB::IsError($res)) {
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // Output the XML root. This tag must be in the format XXXIPPhoneDirectory
     // You may change the word Company below, but no other part of the root tag.
-    echo "<CompanyIPPhoneDirectory  clearlight=\"true\">\n";
-
+    echo "<FanvilIPPhoneDirectory  clearlight=\"true\">\n";
+    echo "    <Title wrap=\"yes\">" . $contact_manager_group . "<\Title>\n";
+ 
     // Loop through the results and output them correctly.
     // Spacing is setup below in case you wish to look at the result in a browser.
     $previousname = "";
@@ -130,7 +131,7 @@ if (DB::IsError($res)) {
     // Close the last entry.
     echo "    </DirectoryEntry>\n";
     // Output the closing tag of the root. If you changed it above, make sure you change it here.
-    echo "</CompanyIPPhoneDirectory>\n";
+    echo "</FanvilIPPhoneDirectory>\n";
 }
 
 ?>
