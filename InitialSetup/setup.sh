@@ -5,6 +5,10 @@ sudo yum update -y
 echo "Installing git"
 sudo yum install git -y
 echo "Removing commerical modules, except sysadmin..."
+echo "Removing Oracle Connector"
+sudo fwconsole ma delete oracle_connector
+echo "Removing Advanced Recovery"
+sudo fwconsole ma delete adv_recovery
 echo "Removing areminder"
 sudo fwconsole ma delete areminder
 echo "Removing broadcast"
