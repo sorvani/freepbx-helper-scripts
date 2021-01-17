@@ -4,12 +4,6 @@
 # TODO: change this to a parameter?
 read -p "Enter a new username to use for SSH access: " myUserName
 
-# Prompt for your GitLab username
-# TODO: update this to something intelligent....
-echo "For now the is hard coded and expecting that you have a GitLab repo named 'public_keys' containing the file 'authorized_keys' in the master branch."
-echo "\n\n"
-read -p "Enter your GitLab username: " myGitLabUsername
-
 # Create user account with default password of ChangeMe
 useradd --create-home $myUserName --password $(openssl passwd -1 ChangeMe)
 # expire the password to force reset on first login
@@ -18,19 +12,9 @@ chage -d 0 $myUserName
 gpasswd -a $myUserName wheel
 gpasswd -a $myUserName asterisk
 
-# Create .ssh directory, add authorized_keys file, set permissions
-mkdir /home/$myUserName/.ssh
-wget -O /home/$myUserName/.ssh/authorized_keys https://gitlab.com/$myGitLabUsername/public_keys/-/raw/master/authorized_keys
-chown -R $myUserName:$myUserName /home/$myUserName/.ssh
-chmod 700 /home/$myUserName/.ssh
-chmod 600 /home/$myUserName/.ssh/authorized_keys
-
 # Disable root login via ssh
-echo "Disabling root login to SSH as well as password login to SSH."
+echo "Disabling root login to SSH."
 sed -i 's/#\?\(PerminRootLogin\s*\).*$/\1 no/' /etc/ssh/sshd_config
-# Require key for ssh login
-# Ends up with duplicate PasswordAuthentication because it modifies both #PasswordAuthentication and PasswordAuthentication
-sed -i 's/#\?\(PasswordAuthentication\s*\).*$/\1 no/' /etc/ssh/sshd_config
 
 # Restart SSH service to apply changes
 systemctl restart sshd
