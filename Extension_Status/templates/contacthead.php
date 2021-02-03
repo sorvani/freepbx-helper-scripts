@@ -31,7 +31,7 @@ th, td {
       <th>Firmware</th>
       <th>Status</th>
       <th>Response Time</th>
-      <th>Device Local IP</th>
+      <th>Known Device IPs</th>
       <th>Registration Expires</th>
     </tr>
   </thead>
