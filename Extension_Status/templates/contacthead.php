@@ -1,3 +1,4 @@
+<title>Extension Status</title>
 <style>
 table {
   width: 100%;
