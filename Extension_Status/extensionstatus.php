@@ -3,6 +3,9 @@
 // Load FreePBX bootstrap environment
 require_once('/etc/freepbx.conf');
 
+// Make sure we are logged in to FreePBX
+if (!defined('FREEPBX_IS_AUTH')) { die('No direct script access allowed'); }
+
 // Load	AMI
 global $astman;
 
