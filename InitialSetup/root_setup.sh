@@ -28,11 +28,14 @@ systemctl restart sshd >> setup.log
 echo "Downloading the main setup script"
 echo ""
 wget -O /home/$myUserName/setup.sh https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/InitialSetup/setup.sh >> setup.log
-echo "Downloading the upgrade script"
+chown $myUserName:$myUserName /home/$myUserName/setup.sh >> setup.log
+
+# Pre download the update script into the user's home directory.
+chmod +x /home/$myUserName/update.sh >> setup.log
+echo "Downloading the update script"
 echo ""
 wget -O /home/$myUserName/update.sh https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/InitialSetup/update.sh >> setup.log
-chown $myUserName:$myUserName /home/$myUserName/setup.sh >> setup.log
-chmod +x /home/$myUserName/setup.sh >> setup.log
+chown $myUserName:$myUserName /home/$myUserName/update.sh >> setup.log
 chmod +x /home/$myUserName/update.sh >> setup.log
 
 
