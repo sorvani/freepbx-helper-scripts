@@ -1,6 +1,6 @@
 #!/bin/bash
 logdate=`date +"%Y%m%d-%H%M%S"`
-logfile=setup-$logdate.log
+logfile=upgrade-$logdate.log
 printf "Beginning update of FreePBX 15...\n" | tee -a $logfile
 if [ "$EUID" -ne 0 ]
   then printf "This script must be executed with sudo. Please run again: sudo ./update.sh\n" | tee -a $logfile
@@ -23,4 +23,7 @@ fwconsole chown 2> /dev/null | tee -a $logfile
 printf "Reloading FreePBX...\n" | tee -a $logfile
 fwconsole reload >> $logfile
 
-printf "Your FreePBX system has been updated. It is strongly recommended that you schedule a reboot.\n" | tee -a $logfile
+printf "Your FreePBX system has been updated.\n\n" | tee -a $logfile
+printf "The following FreePBX modules were upgraded:\n" | tee -a $logfile
+grep "Upgrading module" $logfile | sed 's/Upgrading module //' | tee -a $logfile
+printf "\nIt is strongly recommended that you schedule a reboot.\n" | tee -a $logfile
