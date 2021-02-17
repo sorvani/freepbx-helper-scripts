@@ -28,8 +28,13 @@ systemctl restart sshd >> setup.log
 echo "Downloading the main setup script"
 echo ""
 wget -O /home/$myUserName/setup.sh https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/InitialSetup/setup.sh >> setup.log
+echo "Downloading the upgrade script"
+echo ""
+wget -O /home/$myUserName/update.sh https://raw.githubusercontent.com/sorvani/freepbx-helper-scripts/master/InitialSetup/update.sh >> setup.log
 chown $myUserName:$myUserName /home/$myUserName/setup.sh >> setup.log
 chmod +x /home/$myUserName/setup.sh >> setup.log
+chmod +x /home/$myUserName/update.sh >> setup.log
+
 
 ipaddress=`ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
 
