@@ -24,6 +24,18 @@ printf "Reloading FreePBX...\n" | tee -a $logfile
 fwconsole reload >> $logfile
 
 printf "Your FreePBX system has been updated.\n\n" | tee -a $logfile
-printf "The following FreePBX modules were upgraded:\n" | tee -a $logfile
-grep "Upgrading module" $logfile | sed 's/Upgrading module //' | tee -a $logfile
-printf "\nIt is strongly recommended that you schedule a reboot.\n" | tee -a $logfile
+if grep -q "Upgrading module" $logfile
+then 
+  printf "The following FreePBX modules were upgraded:\n" | tee -a $logfile
+  grep "Upgrading module" $logfile | sed 's/Upgrading module //' | tee -a $logfile
+  printf "\n\n" | tee -a $logfile
+fi
+
+# Get system uptime in days (divide seconds by 86400)
+daysup=`awk '{print $0/86400;}' /proc/uptime`;
+
+if [ $(echo "$daysup > 30" | bc) -ne 0 ]
+then
+  printf "Your system has been running for $daysup days.\n" | tee -a $logfile
+  printf "It is strongly recommended that you schedule a reboot.\n\n" | tee -a $logfile
+fi
