@@ -25,7 +25,9 @@ th, td {
   <thead>
     <tr>
       <th>Extension</th>
-      <th style="display:none;">URI</th>
+<?php
+      if ($showuri) { echo "      <th>URI</th>"; }
+?>
       <th>Brand</th>
       <th>Model</th>
       <th>Firmware</th>
