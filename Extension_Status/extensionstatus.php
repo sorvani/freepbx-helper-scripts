@@ -42,9 +42,9 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(15) "MicroSIP/3.20.5"
   **********/
   $ret_info = get_device_info($data['UserAgent']);
-  echo '      <td>' . $ret_info[0] . '</td>' . "\n";
-  echo '      <td>' . $ret_info[1] . '</td>' . "\n";
-  echo '      <td>' . $ret_info[2] . '</td>' . "\n";
+  echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
+  echo '      <td>' . $ret_info['model'] . '</td>' . "\n";
+  echo '      <td>' . $ret_info['firmware'] . '</td>' . "\n";
 
   // show the Status
   echo '      <td>' . $data['Status'] . '</td>' . "\n";
