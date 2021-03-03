@@ -40,6 +40,7 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(54) "LinphoneiOS/4.3.0 (Bob's iPhone) LinphoneSDK/4.4.0"
     ["UserAgent"]=> string(24) "OBIHAI/OBi202-3.2.2.5921"
     ["UserAgent"]=> string(15) "MicroSIP/3.20.5"
+    ["UserAgent"]=> string(14) "Acrobits SIPIS" // Sangoma Connect
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -117,6 +118,7 @@ function get_device_info($ua) {
     case "Grandstream":
     case "OBIHAI":
     case "Fanvil":
+    case "Acrobits":
       $mod_firm_arr = preg_split("/[\s-]/", $ua_arr[1]);
       $device_info = ["brand" => $ua_arr[0], "model" => $mod_firm_arr[0], "firmware" => $mod_firm_arr[1]];
       break;
