@@ -43,6 +43,7 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(14) "Acrobits SIPIS" // Sangoma Connect
     ["UserAgent"]=> string(20) "Cisco/SPA504G-7.5.2b"
     ["UserAgent"]=> string(67) "Linphone Desktop/4.2.5 (macOS 10.15, Qt 5.15.2) LinphoneCore/4.4.19"
+    ["UserAgent"]=> string(15) "Telephone 1.5.2" // macOS app "Telephone"
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -127,6 +128,7 @@ function get_device_info($ua) {
       break;
     case "Zoiper":
     case "MicroSIP":
+    case "Telephone":
       $device_info = ["brand" => $ua_arr[0], "model" => "", "firmware" => $ua_arr[1]];
       break;
     case "snomPA1":
