@@ -40,10 +40,10 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(54) "LinphoneiOS/4.3.0 (Bob's iPhone) LinphoneSDK/4.4.0"
     ["UserAgent"]=> string(24) "OBIHAI/OBi202-3.2.2.5921"
     ["UserAgent"]=> string(15) "MicroSIP/3.20.5"
-    ["UserAgent"]=> string(14) "Acrobits SIPIS" // Sangoma Connect
-    ["UserAgent"]=> string(20) "Cisco/SPA504G-7.5.2b"
-    ["UserAgent"]=> string(67) "Linphone Desktop/4.2.5 (macOS 10.15, Qt 5.15.2) LinphoneCore/4.4.19"
+    ["UserAgent"]=> string(14) "Acrobits SIPIS" // Sangoma Connect push service
     ["UserAgent"]=> string(15) "Telephone 1.5.2" // macOS app "Telephone"
+    ["UserAgent"]=> string(67) "Linphone Desktop/4.2.5 (macOS 10.15, Qt 5.15.2) LinphoneCore/4.4.19"
+    ["UserAgent"]=> string(21) "Sangoma Connect/1.0.1"
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -126,6 +126,10 @@ function get_device_info($ua) {
       $mod_firm_arr = preg_split("/[\s-]/", $ua_arr[1]);
       $device_info = ["brand" => $ua_arr[0], "model" => $mod_firm_arr[0], "firmware" => $mod_firm_arr[1]];
       break;
+    case "Sangoma":
+      $mod_firm_arr = preg_split("/[\/]/", $ua_arr[1]);
+      $device_info = ["brand" => $ua_arr[0], "model" => $mod_firm_arr[0], "firmware" => $mod_firm_arr[1]];
+      break;
     case "Zoiper":
     case "MicroSIP":
     case "Telephone":
@@ -138,12 +142,9 @@ function get_device_info($ua) {
       $mod_firm_arr = preg_split("/[\s]/", $ua_arr[1]);
       $device_info = ["brand" => $ua_arr[0], "model" => "", "firmware" => $mod_firm_arr[0]];
       break;
-    case "Linphone":
-      $mod_firm_arr = preg_split("/[\s\/]/", $ua_arr[1]);
-      $device_info = ["brand" => $ua_arr[0] . ' ' . $mod_firm_arr[0] , "model" => $mod_firm_arr[2], "firmware" => $mod_firm_arr[1]];
-    case "Linphone":
+    case "Linphone": //Linphone Desktop
       $mod_firm_arr = preg_split("/[\s\/]/", preg_replace('/\(|\)/','',$ua_arr[1]));
-      $device_info = ["brand" => $ua_arr[0] . " " . $mod_firm_arr[0], "model" => $mod_firm_arr[2], "firmware" => $mod_firm_arr[1]$
+      $device_info = ["brand" => $ua_arr[0] . " " . $mod_firm_arr[0], "model" => $mod_firm_arr[2], "firmware" => $mod_firm_arr[1]];
       break;
     default:
       $device_info = ["brand" => "Unknown", "model" => "", "firmware" => ""];
