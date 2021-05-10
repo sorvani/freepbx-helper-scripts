@@ -44,6 +44,7 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(15) "Telephone 1.5.2" // macOS app "Telephone"
     ["UserAgent"]=> string(67) "Linphone Desktop/4.2.5 (macOS 10.15, Qt 5.15.2) LinphoneCore/4.4.19"
     ["UserAgent"]=> string(21) "Sangoma Connect/1.0.1"
+    ["UserAgent"]=> string(4) "Zulu"
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -115,6 +116,7 @@ function get_device_info($ua) {
   $ua_arr = preg_split("/[\s\/]/", $ua, 2);
   switch ($ua_arr[0]) {
     case "Yealink":
+    case "Zulu":
       $mod_firm_arr = preg_split("/[\s]/", preg_replace("/^SIP[\s-]/","",$ua_arr[1]));
       $device_info = ["brand" => $ua_arr[0], "model" => $mod_firm_arr[0], "firmware" => $mod_firm_arr[1]];
       break;
