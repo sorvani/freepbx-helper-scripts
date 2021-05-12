@@ -45,6 +45,7 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(67) "Linphone Desktop/4.2.5 (macOS 10.15, Qt 5.15.2) LinphoneCore/4.4.19"
     ["UserAgent"]=> string(21) "Sangoma Connect/1.0.1"
     ["UserAgent"]=> string(4) "Zulu"
+    ["UserAgent"]=> string(47) "PolycomRealPresenceTrio-Trio_8500-UA/5.9.2.7727"
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -149,7 +150,13 @@ function get_device_info($ua) {
       $device_info = ["brand" => $ua_arr[0] . " " . $mod_firm_arr[0], "model" => $mod_firm_arr[2], "firmware" => $mod_firm_arr[1]];
       break;
     default:
-      $device_info = ["brand" => "Unknown", "model" => "", "firmware" => ""];
+      // Messy, will look into it after more Poly devices are tested
+      if (substr($ua_arr[0],0,7) == "Polycom") {
+        $mod_firm_arr = preg_split("/[-]/", $ua_arr[0]);
+        $device_info = ["brand"	=> "Polycom", "model" => preg_replace('/_/',' ',$mod_firm_arr[1]), "firmware" => $ua_arr[1]];
+      }	else {
+        $device_info = ["brand" => "Unknown", "model" => "", "firmware" => ""];
+      }
   }
   return $device_info;
 }
