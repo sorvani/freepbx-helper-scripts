@@ -14,7 +14,7 @@ global $astman;
 
 $results = $astman->PJSIPShowRegistrationInboundContactStatuses();
 
-include 'templates/contacthead.php';
+include './extensionstatus_header.php';
 
 
 foreach ($results as $data) {
