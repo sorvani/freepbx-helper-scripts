@@ -8,7 +8,7 @@ Here are the commands to run to pull it down from here.
 sudo mkdir -p /var/www/html/custom
 cd /var/www/html/custom
 sudo wget https://github.com/sorvani/freepbx-helper-scripts/raw/Extension_Status/extensionstatus.php
-sudo wget https://github.com/sorvani/freepbx-helper-scripts/raw/Extension_Status/templates/extensionstatus_header.php
+sudo wget https://github.com/sorvani/freepbx-helper-scripts/raw/Extension_Status/extensionstatus_header.php
 sudo chown -R asterisk:asterisk /var/www/html/custom
 cd ~
 ```
