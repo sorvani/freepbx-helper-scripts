@@ -111,7 +111,11 @@ foreach ($results as $data) {
   echo '    </tr>' . "\n";
 }
 
-include 'templates/contactfoot.php';
+// close out table and div. likely change to include eventually
+echo '  </tbody>' . "\n";
+echo '</table>' . "\n";
+echo '</div>' . "\n";
+
 
 function get_device_info($ua) {
   $ua_arr = preg_split("/[\s\/]/", $ua, 2);
