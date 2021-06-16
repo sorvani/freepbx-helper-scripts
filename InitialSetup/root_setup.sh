@@ -17,7 +17,7 @@ gpasswd -a $myUserName asterisk >> setup.log
 # Disable root login via ssh
 echo "Disabling root login to SSH."
 echo ""
-sed -i 's/#\?\(PerminRootLogin\s*\).*$/\1 no/' /etc/ssh/sshd_config >> setup.log
+sed -i 's/^#\?\(PermitRootLogin\s*\).*$/\1no/' /etc/ssh/sshd_config >> setup.log
 
 # Restart SSH service to apply changes
 echo "Restarting the SSH service"
