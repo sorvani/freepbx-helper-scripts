@@ -9,7 +9,7 @@ fi
 # Require key for ssh login
 printf "Disabling password login to SSH.\n" | tee -a $logfile
 # Ends up with duplicate PasswordAuthentication because it modifies both #PasswordAuthentication and PasswordAuthentication
-sed -i 's/#\?\(PasswordAuthentication\s*\).*$/\1 no/' /etc/ssh/sshd_config | tee -a $logfile
+sed -i 's/^#\?\(PasswordAuthentication\s*\).*$/\1no/' /etc/ssh/sshd_config | tee -a $logfile
 systemctl restart sshd | tee -a $logfile
 
 printf "Updating operating system.\n" | tee -a $logfile
