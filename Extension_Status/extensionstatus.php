@@ -46,6 +46,7 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(21) "Sangoma Connect/1.0.1"
     ["UserAgent"]=> string(4) "Zulu"
     ["UserAgent"]=> string(47) "PolycomRealPresenceTrio-Trio_8500-UA/5.9.2.7727"
+    ["UserAgent"]=> string(43) "PolycomSoundPointIP-SPIP_450-UA/4.0.15.1047"
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -62,7 +63,7 @@ foreach ($results as $data) {
   /********* Examples
     // Yealink phones (all)
     ["CallID"] => string(28) "0_1362581122@192.168.101.161"
-    ["URI"] => string(61) "sip:417@173.219.158.145:1025;x-ast-orig-host=10.1.17.130:5060"
+    ["URI"] => string(61) "sip:417@1X.2X.1X.1X:1025;x-ast-orig-host=10.1.17.130:5060"
     ["ViaAddress"] => string(17) "10.202.40.37:5060"
 
     // Grandstream HT802
@@ -74,7 +75,7 @@ foreach ($results as $data) {
 
     //MicroSIP
     ["CallID"] => string(32) "341cec212e1747b692e5663b2023b123"
-    ["URI"] => string(64) "sip:4272@68.99.226.191:33980;ob;x-ast-orig-host=10.0.1.131:57017"
+    ["URI"] => string(64) "sip:4272@6X.9X.2X.1X:33980;ob;x-ast-orig-host=10.0.1.131:57017"
     ["ViaAddress"] => string(16) "10.0.1.131:57017"
 
     //Snom PA1
@@ -88,8 +89,13 @@ foreach ($results as $data) {
 
     //OBiHAI 
     ["CallID"] => string(29) "65844919897ccd8f@10.101.5.131"
-    ["URI"] => string(25) "sip:416@68.62.231.21:5060"
+    ["URI"] => string(25) "sip:416@6X.6X.2X.2X:5060"
     ["ViaAddress"] => string(17) "10.101.5.131:5060"
+
+    // Polycom
+    ["CallID"]=> string(39) "affc1078-ed6cde77-f19623f6@192.168.7.50"
+    ["URI"]=> string(57) "sip:301@6X.5X.2X.2X:5060;x-ast-orig-host=192.168.7.50:0"
+    ["ViaAddress"]=> string(12) "192.168.7.50"
   *********/
   $callid = end(explode('@',$data['CallID']));
   $viaaddress = explode(':',$data['ViaAddress']);
