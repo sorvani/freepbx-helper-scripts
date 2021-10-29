@@ -47,6 +47,8 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(4) "Zulu"
     ["UserAgent"]=> string(47) "PolycomRealPresenceTrio-Trio_8500-UA/5.9.2.7727"
     ["UserAgent"]=> string(43) "PolycomSoundPointIP-SPIP_450-UA/4.0.15.1047"
+    ["UserAgent"]=> string(24) "Jitsi2.10.5550Windows 10"
+    ["UserAgent"]=> string(18) "Z 5.5.5 v2.10.15.2"  //potentially Jitsi on macOS.
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -128,6 +130,7 @@ function get_device_info($ua) {
   switch ($ua_arr[0]) {
     case "Yealink":
     case "Zulu":
+    case "Z":
       $mod_firm_arr = preg_split("/[\s]/", preg_replace("/^SIP[\s-]/","",$ua_arr[1]));
       $device_info = ["brand" => $ua_arr[0], "model" => $mod_firm_arr[0], "firmware" => $mod_firm_arr[1]];
       break;
@@ -164,6 +167,11 @@ function get_device_info($ua) {
       if (substr($ua_arr[0],0,7) == "Polycom") {
         $mod_firm_arr = preg_split("/[-]/", $ua_arr[0]);
         $device_info = ["brand"	=> "Polycom", "model" => preg_replace('/_/',' ',$mod_firm_arr[1]), "firmware" => $ua_arr[1]];
+      // Jitsi on Windows does not have a split character.
+      } elseif (substr($ua_arr[0],0,5) == "Jitsi" ) {
+        $regexp='/(\D+)([\d\.]+)(\D+.*)/';
+       	preg_match($regexp, $ua, $ua_jitsi);
+        $device_info = ["brand" => $ua_jitsi[1], "model" => $ua_jitsi[3], "firmware" => $ua_jitsi[2]];
       }	else {
         $device_info = ["brand" => "Unknown", "model" => "", "firmware" => ""];
       }
