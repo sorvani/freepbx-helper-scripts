@@ -59,7 +59,12 @@ foreach ($results as $data) {
   echo '      <td>' . $data['Status'] . '</td>' . "\n";
 
   // Show RTT times in milliseconds
-  echo '      <td>' . $data['RoundtripUsec'] / 1000 . ' ms</td>' . "\n";
+  if (is_numeric($data['RoundtripUsec'])) {
+    echo '	<td>' . $data['RoundtripUsec'] / 1000 . ' ms</td>' . "\n";
+  } else {
+    echo '	<td>-</td>' . "\n";
+  }
+
 
   // Pull out the various IP addresses known to Asterisk.
   /********* Examples
