@@ -39,7 +39,7 @@ if (DB::IsError($res)) {
     // output the XML header info
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // Root element of XML
-    echo "<AddresBook>\n";
+    echo "<AddressBook>\n";
     // Loop through the results and output them correctly.
     // Spacing is setup below in case you wish to look at the result in a browser.
     foreach ($extensions as $extension) {
@@ -52,7 +52,7 @@ if (DB::IsError($res)) {
         echo "    </Contact>\n";
     }
     // Output the closing tag of the root.
-    echo "</AddresBook>\n";
+    echo "</AddressBook>\n";
 }
 /*
     //  phonebook.xml for newer models like GXP2110
