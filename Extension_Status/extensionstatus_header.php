@@ -25,6 +25,7 @@ th, td {
   <thead>
     <tr>
       <th>Extension</th>
+      <th>Name</th>
 <?php
       if ($showuri) { echo "      <th>URI</th>"; }
 ?>
