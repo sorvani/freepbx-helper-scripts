@@ -6,8 +6,10 @@ $showuri = false;
 // Set to true to show a var_dump of the $results array
 $showdebug = false;
 
+$bootstrap_settings['freepbx_auth'] = false;
 // Load FreePBX bootstrap environment
-require_once('/etc/freepbx.conf');
+include '/etc/freepbx.conf';
+$fcore = FreePBX::Core();
 
 // Load AMI
 global $astman;
@@ -22,6 +24,17 @@ foreach ($results as $data) {
 
   // The extension
   echo '      <td>' . $data['AOR'] . '</td>' . "\n";
+
+  // Extension Display Name
+  // Use this on FreePBX <=15 aka PHP 5
+  // if ((substr($data['AOR'],0,2) === '90') || (substr($data['AOR'],0,2) === '98')) {
+  // Use this on FreePBX 16 aka PHP 7+
+  if (str_starts_with($data['AOR'],'90') || str_starts_with($data['AOR'],'98')) {
+    $user=$fcore->getUser(substr($data['AOR'],2));
+  } else {
+    $user=$fcore->getUser($data['AOR']);
+  }
+  echo '         <td>' . $user['name'] . '</td>' . "\n";
 
   // The URI is the AOR that we will send commands back to eventually
   // Eventual notify syntax to replicate
