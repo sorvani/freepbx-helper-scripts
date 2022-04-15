@@ -6,7 +6,11 @@ $showuri = false;
 // Set to true to show a var_dump of the $results array
 $showdebug = false;
 
-$bootstrap_settings['freepbx_auth'] = false;
+// Make	sure we	are logged in to FreePBX 
+session_start();
+if (!$_SESSION['AMP_user']) {
+        die('Not logged in! Please log in to your FreePBX dashboard before opening this page...');
+}
 // Load FreePBX bootstrap environment
 include '/etc/freepbx.conf';
 $fcore = FreePBX::Core();
