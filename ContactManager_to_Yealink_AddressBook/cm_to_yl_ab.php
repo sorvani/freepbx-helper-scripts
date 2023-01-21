@@ -116,32 +116,23 @@ if (DB::IsError($res)) {
     // Loop through the results and output them correctly.
     // Spacing is setup below in case you wish to look at the result in a browser.
     $previousname = "";
-    $firstloop = true;
     foreach ($contacts as $contact) {
         if ($contact['displayname'] != $previousname) {
-            if ($firstloop){
-                // flip the bit
-                $firstloop = false;
-            } else {
-                // close the previous entry
-                echo "    </DirectoryEntry>\n";
-            }
             // Start the entry
             echo "    <DirectoryEntry>\n";
             echo "        <Name>" . $contact['displayname'] . "</Name>\n";
+            if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) {
+                // not using E164 or it is an internal extension
+                echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['number'] . "</Telephone>\n";
+            } else {
+                // using E164
+                echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['E164'] . "</Telephone>\n";
+            }
+            echo "    </DirectoryEntry>\n";
             // set the current name to the previous name
             $previousname = $contact['displayname'];
         }
-        if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) {
-            // not using E164 or it is an internal extnsion
-            echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['number'] . "</Telephone>\n";
-        } else {
-            // using E164
-            echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['E164'] . "</Telephone>\n";
-        }
     }
-    // Close the last entry.
-    echo "    </DirectoryEntry>\n";
     // Output the closing tag of the root. If you changed it above, make sure you change it here.
     echo "</CompanyIPPhoneDirectory>\n";
 }
