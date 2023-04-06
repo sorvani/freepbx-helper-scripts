@@ -99,8 +99,8 @@ if (DB::IsError($res)) {
     $dname = array();
     $order = array();
     for ($i = 0; $i < count($contacts); $i++) {
-        $dname[] = $contacts[$i][1];
-        $sorder[] = $contacts[$i][4];
+        $dname[] = $contacts[$i]['displayname'];
+        $sorder[] = $contacts[$i]['sortorder'];
     }
     // now apply sort
     array_multisort($dname, SORT_ASC,
