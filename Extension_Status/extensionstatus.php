@@ -66,6 +66,7 @@ foreach ($results as $data) {
     ["UserAgent"]=> string(43) "PolycomSoundPointIP-SPIP_450-UA/4.0.15.1047"
     ["UserAgent"]=> string(24) "Jitsi2.10.5550Windows 10"
     ["UserAgent"]=> string(18) "Z 5.5.5 v2.10.15.2"  //potentially Jitsi on macOS.
+    ["UserAgent"]=> string(13) "Algo-8201/5.2" // Algo door intercom
   **********/
   $ret_info = get_device_info($data['UserAgent']);
   echo '      <td>' . $ret_info['brand'] . '</td>' . "\n";
@@ -189,6 +190,10 @@ function get_device_info($ua) {
       if (substr($ua_arr[0],0,7) == "Polycom") {
         $mod_firm_arr = preg_split("/[-]/", $ua_arr[0]);
         $device_info = ["brand"	=> "Polycom", "model" => preg_replace('/_/',' ',$mod_firm_arr[1]), "firmware" => $ua_arr[1]];
+      // Algo is Algo-NNNN/firmware
+      } elseif (substr($ua_arr[0],0,4) == "Algo" ) {
+        $mod_arr = preg_split("/[-]/", $ua_arr[0]);
+        $device_info = ["brand" => $mod_arr[0], "model" => $mod_arr[1], "firmware" => $ua_arr[1]];
       // Jitsi on Windows does not have a split character.
       } elseif (substr($ua_arr[0],0,5) == "Jitsi" ) {
         $regexp='/(\D+)([\d\.]+)(\D+.*)/';
