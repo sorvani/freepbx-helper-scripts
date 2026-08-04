@@ -51,15 +51,16 @@ require_once('/etc/freepbx.conf');
 global $db;
 
 // This pulls every number in contact manager that is part of the group specified by $contact_manager_group
-$sql = "SELECT cen.number, cge.displayname, cen.type, cen.E164, 0 AS 'sortorder' 
-        FROM contactmanager_group_entries AS cge 
-        LEFT JOIN contactmanager_entry_numbers AS cen ON cen.entryid = cge.id 
-        WHERE cge.groupid = (SELECT cg.id FROM contactmanager_groups AS cg WHERE cg.name = '$contact_manager_group') 
+// The group name is bound as a parameter so a value passed on the URL cannot alter the query.
+$sql = "SELECT cen.number, cge.displayname, cen.type, cen.E164, 0 AS 'sortorder'
+        FROM contactmanager_group_entries AS cge
+        LEFT JOIN contactmanager_entry_numbers AS cen ON cen.entryid = cge.id
+        WHERE cge.groupid = (SELECT cg.id FROM contactmanager_groups AS cg WHERE cg.name = ?)
         ORDER BY cge.displayname, cen.number;";
 
 // Execute the SQL statement
 $res = $db->prepare($sql);
-$res->execute();
+$res->execute(array($contact_manager_group));
 
 // Check if there is an error with the query
 if (DB::IsError($res)) {

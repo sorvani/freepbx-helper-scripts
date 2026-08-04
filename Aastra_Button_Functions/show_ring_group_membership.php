@@ -47,19 +47,26 @@
   require_once('/etc/freepbx.conf');
 
   // Get the extension that was passed on the URL.
-  $extension = $_GET["ext"];
+  // Extensions are always numeric, so reject anything else outright. This keeps
+  // stray LIKE wildcards (% and _) out of the queries below as well.
+  $extension = isset($_GET["ext"]) ? $_GET["ext"] : "";
   // $extension = $argv[1]; // for testing from CLI
   // echo var_dump($extension)."\n";
+  if (!ctype_digit((string)$extension)) {
+    header("HTTP/1.1 400 Bad Request");
+    echo "Invalid extension.\n";
+    exit;
+  }
 
   // Initialize a database connection
   global $db;
 
   if ($show_user_extension == 1) {
     // Check to see if extension is valid and return the user name 
-    $sql = "SELECT `id`,`description` FROM `devices` WHERE `id` = $extension;";
+    $sql = "SELECT `id`,`description` FROM `devices` WHERE `id` = ?;";
     // Execute the SQL statement
     $res = $db->prepare($sql);
-    $res->execute();
+    $res->execute(array($extension));
     // Check that something is returned
     if (DB::IsError($res)) {
       // Potentially clean this up so that it outputs pretty if not valid                
@@ -78,13 +85,13 @@
   // Ring groups are only able to be queried from the MySQL database.
   // The `grplist` coliumn contains the list of extensions that are members.
   // The WHERE clause below is so specific in order to not match on a potential dupe as a substring.
-  $sql = "SELECT `grpnum`,`description`,`grplist` FROM `ringgroups` "; 
-  $sql .= "WHERE `grplist` LIKE '$extension-%' OR `grplist` LIKE '%-$extension' OR `grplist` LIKE '%-$extension-%' OR `grplist` = '$extension' ";
+  $sql = "SELECT `grpnum`,`description`,`grplist` FROM `ringgroups` ";
+  $sql .= "WHERE `grplist` LIKE ? OR `grplist` LIKE ? OR `grplist` LIKE ? OR `grplist` = ? ";
   $sql .= "ORDER BY `description`;";
 
   // Execute the SQL statement
   $res = $db->prepare($sql);
-  $res->execute();
+  $res->execute(array($extension."-%", "%-".$extension, "%-".$extension."-%", $extension));
   // Check that something is returned
   if (DB::IsError($res)) {
     // Potentially clean this up so that it outputs pretty if not valid                
