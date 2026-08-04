@@ -35,12 +35,14 @@ $es_showdebug = false;
 //   'uri'       target the contact URI - only the handset whose row was clicked
 //   'endpoint'  target the endpoint - EVERY device registered to that extension
 //
-// URI mode is the precise one and the default. AMI documents it as needing a
-// configured default_outbound_endpoint, which suggests it would fail on a box
-// that has never had one set - but measured on the FreePBX 15 test box, which
-// has not, a URI-mode NOTIFY answers "Success: NOTIFY sent" regardless. Switch
-// to 'endpoint' only if this box does turn out to reject URI mode; the error
-// message says so plainly when it happens. See the README.
+// URI mode is the precise one and the default, but it requires a usable
+// default_outbound_endpoint, which older FreePBX systems do not set. Without
+// one Asterisk still answers "Success: NOTIFY sent", sends nothing, and logs
+// only a warning - so a button appears to work while the phone never moves.
+// install.sh checks for this and prompts for an extension when it is missing.
+//
+// Use 'endpoint' instead to address the extension, which always works but
+// reaches every device registered to it.
 $es_notify_target = 'uri';
 
 // After a NOTIFY, the page watches these logs for the handset re-fetching its

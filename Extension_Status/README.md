@@ -36,11 +36,116 @@ sudo ./install.sh
 Then open `https://YOUR-PBX/custom/extensionstatus.php` while logged in to the
 FreePBX admin GUI.
 
-To also enable NOTIFY verification, which needs one log permission change:
+The installer does three things: copies the files, makes sure Asterisk can
+actually send the NOTIFYs the buttons trigger, and grants the one log read that
+lets the page confirm a handset acted. The last two are on by default — the page
+is misleading without the first and blind without the second.
+
+If the page is already open in a browser when you re-run the installer,
+**force-reload it** (Ctrl-Shift-R). The old tab keeps running the old
+JavaScript.
+
+### `default_outbound_endpoint` — required
+
+The page addresses a NOTIFY to the **contact URI**, so an extension registered
+on both a desk phone and a softphone only gets it on the handset whose row you
+clicked. Asterisk routes a bare-URI NOTIFY through pjsip's
+`default_outbound_endpoint`.
+
+**Older FreePBX systems do not set one, and Asterisk does not tell you.** AMI
+answers `Success: NOTIFY sent`, nothing goes out, and the only trace is a line
+in `/var/log/asterisk/full`:
+
+```
+WARNING res_pjsip_notify.c: No default outbound endpoint set, can not send
+NOTIFY requests to arbitrary URIs.
+```
+
+The button reports success and the phone never moves. So the installer requires
+it, and prompts when it is missing:
+
+```
+==> no usable default_outbound_endpoint
+    pjsip reports 'default_outbound_endpoint', but no endpoint by that name exists.
+    ('default_outbound_endpoint' is Asterisk's own placeholder default.)
+    This is required. Until it is set, every NOTIFY button on the page
+    reports success and does nothing.
+
+    Registered endpoints to choose from:
+      201
+      202
+      203
+
+    Extension to use: 201
+==> setting default_outbound_endpoint=201 in /etc/asterisk/pjsip_custom_post.conf
+==> fwconsole reload
+    confirmed: default_outbound_endpoint = 201
+```
+
+It re-asks until you give an extension that exists. Any registered one works —
+it only supplies the `From` header on outbound NOTIFYs, and is not called, rung
+or otherwise disturbed.
+
+Answer ahead of time, or run non-interactively, with:
 
 ```bash
-ENABLE_VERIFY_LOG=1 sudo -E ./install.sh
+DEFAULT_OUTBOUND_ENDPOINT=201 sudo -E ./install.sh
 ```
+
+Note the global is never empty. Asterisk defaults it to the literal string
+`default_outbound_endpoint`, which is a *name*, not a configured endpoint — so
+"set" and "usable" are separate questions and the installer asks both.
+
+The setting is written to `/etc/asterisk/pjsip_custom_post.conf`. That file is
+`#include`d from **inside** pjsip.conf's `[global]` section — verified on both
+15 and 16 — so a bare `key=value` lands as a global option and needs no section
+header of its own. `fwconsole reload` preserves it.
+
+### Verification — on by default
+
+A check-sync makes the handset re-read its provisioning files, which lands in
+the Apache access log. After a button click the row shows `Verifying…` and polls
+for that fetch, then reports `✓ Config fetched 18:18:46` or, after 30s,
+`✕ No config fetch in 30s`. That is the only end-to-end confirmation available:
+Asterisk reports a NOTIFY *dispatched*, never that the phone acted on it. The
+log is read only after a click — never on page load or auto-refresh.
+
+This needs the web server to be able to read the log, and the two test boxes
+differed, which is why the page also decides at runtime:
+
+| | `/var/log/httpd` | readable by `asterisk`? |
+| --- | --- | --- |
+| FreePBX 15 box | `root:root 0700` | no — needs the grant |
+| FreePBX 16 box | `asterisk:asterisk 0700` | yes, already |
+
+The installer grants it with an ACL — `asterisk` gets traverse on the directory
+and read on that one file, nothing else:
+
+```bash
+setfacl -m u:asterisk:x /var/log/httpd
+setfacl -m u:asterisk:r /var/log/httpd/access_log
+```
+
+and adds a `postrotate` hook to `/etc/logrotate.d/httpd` so it survives
+rotation. It falls back to `chgrp asterisk` + `chmod 750` on boxes with no
+usable ACL support, and says so — that version grants read on *every* file in
+`/var/log/httpd`, `error_log` included.
+
+To decline entirely:
+
+```bash
+ENABLE_VERIFY_LOG=0 sudo -E ./install.sh
+```
+
+Nothing is touched, and the page detects that no log is readable and simply
+omits the check — no warning, no error line. The NOTIFY buttons do not depend
+on it.
+
+**Verification only works if your phones provision over HTTP(S) from Apache.**
+Endpoint Manager over TFTP leaves no access-log trail, so there is nothing to
+find and the check always times out. If a provisioning vhost on another port
+writes its own `CustomLog`, add it to `$es_access_logs`; the page scans all of
+them.
 
 ### Install details
 
@@ -59,19 +164,11 @@ Three files, all in the same directory:
 | `extensionstatus.lib.php` | AMI access, User-Agent parsing, NOTIFY dispatch |
 | `extensionstatus.view.php` | markup, styling, browser code |
 
-By hand instead:
-
-```bash
-for f in extensionstatus.php extensionstatus.lib.php extensionstatus.view.php; do
-  sudo install -o asterisk -g asterisk -m 644 "$f" "/var/www/html/custom/$f"
-done
-```
+Earlier versions shipped a separate `extensionstatus_header.php`. The rewrite
+folded it in; the installer renames any leftover copy aside.
 
 `/var/www/html/custom/` is the right home for these: it is served by the admin
 vhost and FreePBX never writes there, so upgrades leave it alone.
-
-Earlier versions of this page shipped a separate `extensionstatus_header.php`.
-The rewrite folded it in; the installer renames any leftover copy aside.
 
 ## Access control
 
@@ -100,86 +197,28 @@ Softphones get no buttons. Reboot and Factory reset prompt for confirmation.
 The NOTIFY headers are sent inline over AMI, so **no Asterisk config file is
 involved** — `sip_notify_custom.conf` does not need an entry for any of this.
 Add or change actions in the `$es_notify_actions` block at the top of the file;
-each entry notes the `sip_notify_*.conf` section it mirrors. This does mean the
-AMI user needs the `system` privilege, which FreePBX grants by default.
+each entry notes the `sip_notify_*.conf` section it mirrors. The AMI user needs
+the `system` privilege, which FreePBX grants by default.
 
 Asterisk reports success as soon as it dispatches the NOTIFY, including to a URI
 nothing is listening on. A success message means dispatched, not delivered —
-which is what the verification below is for.
+which is what the verification above is for.
 
 ### Addressing: one handset or the whole extension
 
 `$es_notify_target` decides how a NOTIFY is aimed:
 
-| | Reaches | From header |
+| | Reaches | Needs |
 | --- | --- | --- |
-| `'uri'` (default) | only the handset whose row you clicked | the default outbound endpoint's |
-| `'endpoint'` | **every** device registered to that extension | the extension's |
+| `'uri'` (default) | only the handset whose row you clicked | a usable `default_outbound_endpoint` |
+| `'endpoint'` | **every** device registered to that extension | nothing |
 
-URI mode routes through pjsip's `default_outbound_endpoint`, so the request
-carries that identity rather than the extension's. Everything else about the two
-packets is identical and the phone returns 200 OK immediately either way.
+URI mode carries the default outbound endpoint's identity in the `From` header
+rather than the extension's. Everything else about the two packets is identical
+and the phone returns 200 OK immediately either way.
 
-AMI documents URI mode as requiring a configured `default_outbound_endpoint`,
-which reads like it would fail on a box that has never had one set. Measured,
-that reading is wrong — the FreePBX 15 test box still has Asterisk's placeholder
-default there, and a URI-mode `PJSIPNotify` on it answers `Success: NOTIFY sent`
-regardless. So URI mode is simply the default. If your box does reject it, the
-error surfaced in the page says so and names this setting.
-
-The confirmation dialog and the pill in the toolbar both state which mode is
-active, so the blast radius is on screen before the click rather than inferred.
-
-### Verification
-
-A check-sync makes the handset re-read its provisioning files, which lands in
-the web server access log. After a button click the row shows `Verifying…` and
-polls for that fetch, then reports `✓ Config fetched 17:10:08` or, after 30s,
-`✕ No config fetch in 30s`. The log is only read after a click — never on page
-load or auto-refresh.
-
-**This only works if your phones provision over HTTP(S) from Apache.** Endpoint
-Manager over TFTP leaves no access-log trail, so there is nothing to find; the
-buttons still work, the check just always times out.
-
-It also needs the web server to be able to read the log. The two test boxes
-differed here, which is why the page decides at runtime rather than assuming:
-
-| | `/var/log/httpd` | readable by `asterisk`? |
-| --- | --- | --- |
-| FreePBX 15 box | `root:root 0700` | no — needs the change below |
-| FreePBX 16 box | `asterisk:asterisk 0700` | yes, already |
-
-```bash
-ENABLE_VERIFY_LOG=1 sudo -E ./install.sh
-```
-
-That grants it with an ACL — `asterisk` gets traverse on the directory and read
-on that one file, nothing else:
-
-```bash
-sudo setfacl -m u:asterisk:x /var/log/httpd
-sudo setfacl -m u:asterisk:r /var/log/httpd/access_log
-```
-
-and, to survive rotation, in the `postrotate` block of `/etc/logrotate.d/httpd`:
-
-```bash
-setfacl -m u:asterisk:r /var/log/httpd/access_log 2>/dev/null || true
-```
-
-The installer falls back to `chgrp asterisk` + `chmod 750` on the directory if
-the filesystem has no usable ACL support, and says so when it does — that
-version grants read on *every* file in `/var/log/httpd`, `error_log` included.
-
-If a provisioning vhost on another port writes its own `CustomLog`, add it to
-the `$es_access_logs` list; the page scans all of them.
-
-**Verification is entirely optional.** If you would rather not touch log
-permissions, change nothing, or set `$es_access_logs = array()`. The page
-detects that no log is readable and simply omits the check — no warning, no
-error line, everything else works exactly the same. The NOTIFY buttons do not
-depend on it.
+The pill in the toolbar and the confirmation dialog both state which mode is
+active, so the blast radius is on screen before the click.
 
 ## Configuration
 
@@ -194,3 +233,13 @@ At the top of `extensionstatus.php`:
 | `$es_access_logs` | `array('/var/log/httpd/access_log')` | Logs watched to confirm a check-sync landed; `array()` disables verification |
 | `$es_verify_window` | `30` | Seconds to watch before reporting failure |
 | `$es_notify_actions` | see file | Per-brand NOTIFY actions |
+
+Installer environment variables:
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `DEST` | `/var/www/html/custom` | Where the three files go |
+| `DEFAULT_OUTBOUND_ENDPOINT` | *(prompted)* | Answers the prompt; required for a non-interactive run |
+| `ENABLE_VERIFY_LOG` | `1` | `0` declines the access-log read |
+| `ACCESS_LOG` | `/var/log/httpd/access_log` | Log to grant read on |
+| `LOGROTATE_CONF` | `/etc/logrotate.d/httpd` | Where the postrotate hook goes |
