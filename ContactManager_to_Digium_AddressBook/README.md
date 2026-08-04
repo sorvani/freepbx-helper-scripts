@@ -5,12 +5,8 @@
 > provisioning script never has — originally a fatal `Undefined variable $username` at
 > `admin/libraries/gui_auth.php:21`. Current 17 builds no longer throw that, but only because
 > authentication fails open: the script runs unauthenticated by accident rather than by design.
->
-> This script has a second, separate FreePBX 17 bug: it reads `$ctype['internal']`, a variable it
-> never defines. FreePBX's error handler promotes PHP 8 warnings to fatals, so **`?e164=1` returns
-> a hard HTTP 500** here. Confirmed on a live 17 box. The ported version drops `$ctype` in favour
-> of an explicit type map, and also fixes the unreachable `DB::IsError()` check and the missing
-> XML escaping.
+> The ported version sets `$bootstrap_settings['freepbx_auth'] = false` before the bootstrap, and
+> also replaces the unreachable `DB::IsError()` check with a real one.
 
 # ContactManager to Digium A-Series Address Book
 

@@ -6,8 +6,7 @@
 > `admin/libraries/gui_auth.php:21`. Current 17 builds no longer throw that, but only because
 > authentication fails open: the script runs unauthenticated by accident rather than by design.
 > The ported version sets `$bootstrap_settings['freepbx_auth'] = false` before the bootstrap, and
-> also fixes the unreachable `DB::IsError()` check, the missing XML escaping, and the stray
-> `</DirectoryEntry>` this version emits for an empty contact group.
+> also replaces the unreachable `DB::IsError()` check with a real one.
 
 # ContactManager to Fanvil Address Book
 

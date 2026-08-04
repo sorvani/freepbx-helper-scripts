@@ -6,8 +6,7 @@
 > `admin/libraries/gui_auth.php:21`. Current 17 builds no longer throw that, but only because
 > authentication fails open: the script runs unauthenticated by accident rather than by design.
 > The ported version sets `$bootstrap_settings['freepbx_auth'] = false` before the bootstrap, and
-> also fixes the unreachable `DB::IsError()` check and the missing XML escaping that breaks any
-> contact whose name contains an `&`.
+> also replaces the unreachable `DB::IsError()` check with a real one.
 
 # ContactManager to Yealink Address Book
 
