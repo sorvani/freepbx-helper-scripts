@@ -1,3 +1,12 @@
+> [!IMPORTANT]
+> **On FreePBX 17 or newer (Debian), use [sorvani/freepbx17-yealink-backup](https://github.com/sorvani/freepbx17-yealink-backup) instead.**
+> Everything below targets FreePBX 14/15/16 on Sangoma OS (CentOS) and will not work as-is on 17:
+> there is no `/etc/httpd/conf.d`, no `httpd` service, and no `php7-script` handler. The obvious
+> fix — pointing the handler at php-fpm — returns **503 on every PUT**, because FreePBX runs Apache
+> as `asterisk` while the fpm socket is www-data-only, and php-fpm's `security.limit_extensions`
+> refuses `.yealink` scripts regardless. That repo has the working conf, an installer, and the
+> full explanation.
+
 Simple script that handles PUT requests from Yealink phones in order to let you backup the local contact directory to the FreePBX `/tftpboot` via HTTP(S).
 
 1. Download and copy the `put.yealink` file to the `/tftfpboot` directory
