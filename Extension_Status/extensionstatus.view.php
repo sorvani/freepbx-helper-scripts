@@ -30,9 +30,17 @@
     --muted: #777;
     --danger: #c62828;
   }
+  html { height: 100%; }
+  /* Column layout so the table area owns the vertical scrolling. That is what
+     lets the header stick: a sticky th needs a scroll container to stick
+     within, and if the page itself scrolls the header scrolls away with it. */
   body {
     margin: 0;
     padding: 16px;
+    box-sizing: border-box;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
     font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #222;
   }
@@ -62,15 +70,27 @@
   }
   .mode.endpoint { background: #fff8e1; color: #7a5b00; }
 
-  .wrap { overflow-x: auto; }
+  /* min-height:0 lets a flex child actually shrink and scroll. */
+  .wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
   table { width: 100%; border-collapse: collapse; }
   th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     height: 44px;
     text-align: left;
     background-color: var(--accent);
     color: #000;
     padding: 8px 12px;
     white-space: nowrap;
+    /* border-collapse drops borders on sticky cells, so draw the edge with an
+       inset shadow instead - otherwise rows bleed into the header when
+       scrolled underneath it. */
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .18);
   }
   th.sortable { cursor: pointer; user-select: none; }
   th.sortable:hover { filter: brightness(1.07); }
