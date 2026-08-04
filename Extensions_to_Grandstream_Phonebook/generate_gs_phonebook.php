@@ -1,5 +1,14 @@
 <?php
 /*
+ON FREEPBX 17 (DEBIAN), USE THE PORTED VERSION INSTEAD:
+https://github.com/sorvani/freepbx17-phonebooks
+See https://github.com/sorvani/freepbx-helper-scripts/issues/25 -- when a phone fetches this
+script on 17, /etc/freepbx.conf runs the GUI auth layer, which wants an admin session this
+script never has. Current 17 builds no longer fatal on it, but only because authentication
+fails open. The ported version sets $bootstrap_settings['freepbx_auth'] = false before the
+bootstrap, and fixes the unreachable DB::IsError() check, the missing XML escaping, and the
+<AddresBook> typo in the newer-model block below.
+
 The purpose of this file is to read all the extensions in the system and then output them in a
 Grandstream Phonebook formatted XML file.
 

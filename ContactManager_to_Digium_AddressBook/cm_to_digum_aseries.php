@@ -1,5 +1,16 @@
 <?php
 /*
+ON FREEPBX 17 (DEBIAN), USE THE PORTED VERSION INSTEAD:
+https://github.com/sorvani/freepbx17-phonebooks
+See https://github.com/sorvani/freepbx-helper-scripts/issues/25 -- when a phone fetches this
+script on 17, /etc/freepbx.conf runs the GUI auth layer, which wants an admin session this
+script never has. Current 17 builds no longer fatal on it, but only because authentication
+fails open.
+
+This script also has a second FreePBX 17 bug of its own: it reads $ctype['internal'] below,
+a variable it never defines. FreePBX promotes PHP 8 warnings to fatals, so ?e164=1 returns a
+hard HTTP 500. Confirmed on a live 17 box.
+
 The purpose of this file is to read all the Contact Manager entries for the specified group
 and then output them in a Yealink Remote Address Book formatted XML syntax.
 
