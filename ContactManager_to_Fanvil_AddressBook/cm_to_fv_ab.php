@@ -6,8 +6,7 @@ See https://github.com/sorvani/freepbx-helper-scripts/issues/25 -- when a phone 
 script on 17, /etc/freepbx.conf runs the GUI auth layer, which wants an admin session this
 script never has. Current 17 builds no longer fatal on it, but only because authentication
 fails open. The ported version sets $bootstrap_settings['freepbx_auth'] = false before the
-bootstrap, and fixes the unreachable DB::IsError() check, the missing XML escaping, and the
-stray </DirectoryEntry> this version emits for an empty contact group.
+bootstrap, and fixes the unreachable DB::IsError() check.
 
 The purpose of this file is to read all the Contact Manager entries for the specified group
 and then output them in a Yealink Remote Address Book formatted XML syntax.
@@ -47,6 +46,15 @@ $ctype['work'] = "Work"; // <-- Edit the right side to display what you want sho
 $ctype['home'] = "Home"; // <-- Edit the right side to display what you want shown
 $ctype['other'] = "Other"; // <-- Edit the right side to display what you want shown
 
+// Display order for a contact that has several numbers. Lower sorts first.
+// This replaces the old $contact['sortorder'] field, which was assigned but
+// never actually sorted by, so numbers came out in SQL order instead.
+$corder['internal'] = 1;
+$corder['work'] = 2;
+$corder['cell'] = 3;
+$corder['other'] = 4;
+$corder['home'] = 5;
+
 /**********************************************************************************************************/
 /********************** End Customization. Change below at your own risk **********************************/
 /**********************************************************************************************************/
@@ -59,6 +67,23 @@ require_once('/etc/freepbx.conf');
 
 // Initialize a database connection
 global $db;
+
+// Escape for XML element text. Without this a contact named "Smith & Sons"
+// produces a document no phone can parse.
+function xml_text($value) {
+    return htmlspecialchars((string) $value, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8');
+}
+
+// In the Fanvil format the type becomes the tag name, so it has to be a legal
+// XML name. A customized label containing a space or an ampersand would
+// otherwise produce a document no phone can parse.
+function xml_tag($value, $fallback = 'Other') {
+    $tag = preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $value);
+    if ($tag === '' || !preg_match('/^[A-Za-z_]/', $tag)) {
+        return $fallback;
+    }
+    return $tag;
+}
 
 // This pulls every number in contact maanger that is part of the group specified by $contact_manager_group
 // The group name is bound as a parameter so a value passed on the URL cannot alter the query.
@@ -73,72 +98,71 @@ if (DB::IsError($res)) {
     error_log( "There was an error attempting to query contactmanager<br>($sql)<br>\n" . $res->getMessage() . "\n<br>\n");
 } else {
     $contacts = $res->fetchAll(PDO::FETCH_ASSOC);
-    
-    foreach ($contacts as $i => $contact){
-        // The if staements provide the ability to re-lable the phone number type as you wish.
-        // It also allows for setting the number display order to be changed for multi-number contacts.
-        // $contact['type'] will be used as the label
-        // $contact['sortorder'] will be used as the sort order
-        if ($contact['type'] == "cell") {
-            $contact['type'] = $ctype['cell'];
-            $contact['sortorder'] = 3;
+
+    // Group by displayname so a contact with several numbers is one entry.
+    // The old code walked a flat list tracking $previousname and closed the
+    // last entry unconditionally after the loop, so an empty contact group
+    // emitted a </DirectoryEntry> that was never opened -- phones got
+    // "mismatched tag" instead of an empty directory.
+    //
+    // The LEFT JOIN also yields a NULL number for a group entry that has no
+    // numbers at all; skip those rather than emitting an empty element.
+    $groupedContacts = array();
+    foreach ($contacts as $contact) {
+        if ($contact['number'] === null || $contact['number'] === '') {
+            continue;
         }
-        if ($contact['type'] == "internal") {
-            $contact['type'] = $ctype['internal'];
-            $contact['sortorder'] = 1;
+        $name = (string) $contact['displayname'];
+        if (!isset($groupedContacts[$name])) {
+            $groupedContacts[$name] = array();
         }
-        if ($contact['type'] == "work") {
-            $contact['type'] = $ctype['work'];
-            $contact['sortorder'] = 2;
-        }
-        if ($contact['type'] == "other") {
-            $contact['type'] = $ctype['other'];
-            $contact['sortorder'] = 4;
-        }
-        if ($contact['type'] == "home") {
-            $contact['type'] = $ctype['home'];
-            $contact['sortorder'] = 5;
-        }
-        $contact['displayname'] = htmlspecialchars($contact['displayname']);
-        // put the changes back into $contacts
-        $contacts[$i] = $contact;
+        $groupedContacts[$name][] = $contact;
     }
 
     // output the XML header info
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // Output the XML root. This tag must be in the format XXXIPPhoneDirectory
-    // You may change the word Company below, but no other part of the root tag.
+    // You may change the word Fanvil below, but no other part of the root tag.
     echo "<FanvilIPPhoneDirectory clearlight=\"true\">\n";
- 
+
     // Loop through the results and output them correctly.
     // Spacing is setup below in case you wish to look at the result in a browser.
-    $previousname = "";
-    $firstloop = true;
-    foreach ($contacts as $contact) {
-        if ($contact['displayname'] != $previousname) {
-            if ($firstloop){
-                // flip the bit
-                $firstloop = false;
-            } else {
-                // close the previous entry
-                echo "    </DirectoryEntry>\n";
+    foreach ($groupedContacts as $displayname => $contactList) {
+        // Sort this contact's numbers into the configured display order.
+        usort($contactList, function ($a, $b) use ($corder) {
+            $x = isset($corder[$a['type']]) ? $corder[$a['type']] : 99;
+            $y = isset($corder[$b['type']]) ? $corder[$b['type']] : 99;
+            if ($x === $y) {
+                return strcmp((string) $a['number'], (string) $b['number']);
             }
-            // Start the entry
-            echo "    <DirectoryEntry>\n";
-            echo "        <Name>" . $contact['displayname'] . "</Name>\n";
-            // set the current name to the previous name
-            $previousname = $contact['displayname'];
+            return $x - $y;
+        });
+
+        // Start the entry
+        echo "    <DirectoryEntry>\n";
+        echo "        <Name>" . xml_text($displayname) . "</Name>\n";
+
+        foreach ($contactList as $contact) {
+            // The tag name is looked up from the raw Contact Manager type. Do
+            // not overwrite $contact['type'] with it first -- the E164 test
+            // below needs the raw type, and two types sharing a tag name would
+            // otherwise become indistinguishable.
+            $type = (string) $contact['type'];
+            $tag = xml_tag(isset($ctype[$type]) ? $ctype[$type] : $type);
+
+            // Use the E164 field when asked, except for internal extensions,
+            // which are dialled as-is. Fall back to the plain number when the
+            // E164 column is empty, which it commonly is.
+            $number = $contact['number'];
+            if ($use_e164 == 1 && $type !== 'internal' && !empty($contact['E164'])) {
+                $number = $contact['E164'];
+            }
+
+            echo "        <" . $tag . ">" . xml_text($number) . "</" . $tag . ">\n";
         }
-        if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) {
-            // not using E164 or it is an internal extnsion
-            echo "        <" . $contact['type'] . ">" . $contact['number'] . "</" . $contact['type'] . ">\n";
-        } else {
-            // using E164s
-            echo "        <" . $contact['type'] . ">" . $contact['E164'] . "</" . $contact['type'] . ">\n";
-        }
+        // Close the entry.
+        echo "    </DirectoryEntry>\n";
     }
-    // Close the last entry.
-    echo "    </DirectoryEntry>\n";
     // Output the closing tag of the root. If you changed it above, make sure you change it here.
     echo "</FanvilIPPhoneDirectory>\n";
 }

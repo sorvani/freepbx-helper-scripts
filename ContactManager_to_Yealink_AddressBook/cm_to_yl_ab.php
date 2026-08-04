@@ -6,7 +6,7 @@ See https://github.com/sorvani/freepbx-helper-scripts/issues/25 -- when a phone 
 script on 17, /etc/freepbx.conf runs the GUI auth layer, which wants an admin session this
 script never has. Current 17 builds no longer fatal on it, but only because authentication
 fails open. The ported version sets $bootstrap_settings['freepbx_auth'] = false before the
-bootstrap, and fixes the unreachable DB::IsError() check and the missing XML escaping.
+bootstrap, and fixes the unreachable DB::IsError() check.
 
 The purpose of this file is to read all the Contact Manager entries for the specified group
 and then output them in a Yealink Remote Address Book formatted XML syntax.
@@ -46,6 +46,15 @@ $ctype['work'] = "Work"; // <-- Edit the right side to display what you want sho
 $ctype['home'] = "Home"; // <-- Edit the right side to display what you want shown
 $ctype['other'] = "Other"; // <-- Edit the right side to display what you want shown
 
+// Display order for a contact that has several numbers. Lower sorts first.
+// This replaces the old $contact['sortorder'] field, which was assigned but
+// never actually sorted by, so numbers came out in SQL order instead.
+$corder['internal'] = 1;
+$corder['work'] = 2;
+$corder['cell'] = 3;
+$corder['other'] = 4;
+$corder['home'] = 5;
+
 /**********************************************************************************************************/
 /********************** End Customization. Change below at your own risk **********************************/
 /**********************************************************************************************************/
@@ -57,6 +66,15 @@ require_once('/etc/freepbx.conf');
 
 // Initialize a database connection
 global $db;
+
+// Escape for XML element text / attribute values. Without this a contact named
+// "Smith & Sons" produces a document no phone can parse.
+function xml_text($value) {
+    return htmlspecialchars((string) $value, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8');
+}
+function xml_attr($value) {
+    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8');
+}
 
 // This pulls every number in contact manager that is part of the group specified by $contact_manager_group
 // The group name is bound as a parameter so a value passed on the URL cannot alter the query.
@@ -76,15 +94,21 @@ if (DB::IsError($res)) {
 } else {
     // Fetch all contacts
     $contacts = $res->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Group contacts by displayname to handle multiple numbers per contact
-    $groupedContacts = [];
+
+    // Group contacts by displayname to handle multiple numbers per contact.
+    // The LEFT JOIN yields a NULL number for a group entry that has no numbers
+    // at all; skip those rather than emitting an empty <Telephone></Telephone>.
+    $groupedContacts = array();
     foreach ($contacts as $contact) {
-        if (!isset($groupedContacts[$contact['displayname']])) {
-            $groupedContacts[$contact['displayname']] = [];
+        if ($contact['number'] === null || $contact['number'] === '') {
+            continue;
+        }
+        $name = (string) $contact['displayname'];
+        if (!isset($groupedContacts[$name])) {
+            $groupedContacts[$name] = array();
         }
         // Add the contact information (phone numbers) to the grouped contacts
-        $groupedContacts[$contact['displayname']][] = $contact;
+        $groupedContacts[$name][] = $contact;
     }
 
     // Output the XML header
@@ -93,41 +117,37 @@ if (DB::IsError($res)) {
 
     // Loop through the grouped contacts and output them in XML format
     foreach ($groupedContacts as $displayname => $contactList) {
+        // Sort this contact's numbers into the configured display order.
+        usort($contactList, function ($a, $b) use ($corder) {
+            $x = isset($corder[$a['type']]) ? $corder[$a['type']] : 99;
+            $y = isset($corder[$b['type']]) ? $corder[$b['type']] : 99;
+            if ($x === $y) {
+                return strcmp((string) $a['number'], (string) $b['number']);
+            }
+            return $x - $y;
+        });
+
         echo "    <DirectoryEntry>\n";
-        echo "        <Name>" . htmlspecialchars($displayname) . "</Name>\n";
+        echo "        <Name>" . xml_text($displayname) . "</Name>\n";
 
         // Loop through each phone number for the current contact
         foreach ($contactList as $contact) {
-            // Label and number handling based on E164 and type
-            if ($contact['type'] == "cell") {
-                $contact['type'] = $ctype['cell'];
-                $contact['sortorder'] = 3;
-            }
-            if ($contact['type'] == "internal") {
-                $contact['type'] = $ctype['internal'];
-                $contact['sortorder'] = 1;
-            }
-            if ($contact['type'] == "work") {
-                $contact['type'] = $ctype['work'];
-                $contact['sortorder'] = 2;
-            }
-            if ($contact['type'] == "other") {
-                $contact['type'] = $ctype['other'];
-                $contact['sortorder'] = 4;
-            }
-            if ($contact['type'] == "home") {
-                $contact['type'] = $ctype['home'];
-                $contact['sortorder'] = 5;
+            // The label is looked up from the raw Contact Manager type. Do not
+            // overwrite $contact['type'] with the label first -- the E164 test
+            // below needs the raw type, and two types sharing a label would
+            // otherwise become indistinguishable.
+            $type = (string) $contact['type'];
+            $label = isset($ctype[$type]) ? $ctype[$type] : $type;
+
+            // Use the E164 field when asked, except for internal extensions,
+            // which are dialled as-is. Fall back to the plain number when the
+            // E164 column is empty, which it commonly is.
+            $number = $contact['number'];
+            if ($use_e164 == 1 && $type !== 'internal' && !empty($contact['E164'])) {
+                $number = $contact['E164'];
             }
 
-            // Output the phone number in the correct format (E164 or normal)
-            if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) {
-                // Not using E164 or it is an internal extension
-                echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['number'] . "</Telephone>\n";
-            } else {
-                // Using E164 format
-                echo "        <Telephone label=\"" . $contact['type'] . "\">" . $contact['E164'] . "</Telephone>\n";
-            }
+            echo "        <Telephone label=\"" . xml_attr($label) . "\">" . xml_text($number) . "</Telephone>\n";
         }
         echo "    </DirectoryEntry>\n";
     }

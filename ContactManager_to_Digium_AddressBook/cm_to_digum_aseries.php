@@ -5,11 +5,8 @@ https://github.com/sorvani/freepbx17-phonebooks
 See https://github.com/sorvani/freepbx-helper-scripts/issues/25 -- when a phone fetches this
 script on 17, /etc/freepbx.conf runs the GUI auth layer, which wants an admin session this
 script never has. Current 17 builds no longer fatal on it, but only because authentication
-fails open.
-
-This script also has a second FreePBX 17 bug of its own: it reads $ctype['internal'] below,
-a variable it never defines. FreePBX promotes PHP 8 warnings to fatals, so ?e164=1 returns a
-hard HTTP 500. Confirmed on a live 17 box.
+fails open. The ported version also sets $bootstrap_settings['freepbx_auth'] = false before
+the bootstrap and fixes the unreachable DB::IsError() check.
 
 The purpose of this file is to read all the Contact Manager entries for the specified group
 and then output them in a Yealink Remote Address Book formatted XML syntax.
@@ -60,6 +57,15 @@ $telephone = "work";
 $mobile = "cell";
 $other = "other";
 
+// Display order for a contact that has several numbers. Lower sorts first.
+// Keyed by the Contact Manager type, not the Digium tag, so it still works if
+// you point two of the three above at different types.
+$corder['internal'] = 1;
+$corder['work'] = 2;
+$corder['cell'] = 3;
+$corder['other'] = 4;
+$corder['home'] = 5;
+
 /**********************************************************************************************************/
 /********************** End Customization. Change below at your own risk **********************************/
 /**********************************************************************************************************/
@@ -72,6 +78,23 @@ require_once('/etc/freepbx.conf');
 
 // Initialize a database connection
 global $db;
+
+// Escape for XML element text. Without this a contact named "Smith & Sons"
+// produces a document no phone can parse. $ringtype comes off the URL and goes
+// straight into the output, so it needs the same treatment.
+function xml_text($value) {
+    return htmlspecialchars((string) $value, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_XML1, 'UTF-8');
+}
+
+// Map the Contact Manager types chosen above to the three Digium tags. Built in
+// this order so that if two of them name the same Contact Manager type, the
+// earlier one wins -- the same precedence the old if/elseif chain had. Any type
+// not listed is left out of the output, which is the existing behaviour for
+// 'internal' and 'home' under the defaults.
+$typemap = array();
+if (!isset($typemap[$telephone])) { $typemap[$telephone] = 'Telephone'; }
+if (!isset($typemap[$mobile]))    { $typemap[$mobile]    = 'Mobile'; }
+if (!isset($typemap[$other]))     { $typemap[$other]     = 'Other'; }
 
 // This pulls every number in contact maanger that is part of the group specified by $contact_manager_group
 // The group name is bound as a parameter so a value passed on the URL cannot alter the query.
@@ -86,54 +109,88 @@ if (DB::IsError($res)) {
     error_log( "There was an error attempting to query contactmanager<br>($sql)<br>\n" . $res->getMessage() . "\n<br>\n");
 } else {
     $contacts = $res->fetchAll(PDO::FETCH_ASSOC);
-    
+
+    // Group by displayname so a contact with several numbers is one entry.
+    // The old code walked a flat list tracking $previousname and closed the
+    // last entry unconditionally after the loop, so an empty contact group
+    // emitted a <Ring> and a </DirectoryEntry> outside any entry -- phones got
+    // "mismatched tag" instead of an empty directory.
+    //
+    // The LEFT JOIN also yields a NULL number for a group entry that has no
+    // numbers at all; skip those rather than emitting an empty element.
+    $groupedContacts = array();
+    foreach ($contacts as $contact) {
+        if ($contact['number'] === null || $contact['number'] === '') {
+            continue;
+        }
+        $name = (string) $contact['displayname'];
+        if (!isset($groupedContacts[$name])) {
+            $groupedContacts[$name] = array();
+        }
+        $groupedContacts[$name][] = $contact;
+    }
+
     // output the XML header info
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // Output the XML root. This tag must be in the format XXXIPPhoneDirectory
-    // You may change the word Company below, but no other part of the root tag.
-    echo "<AsteriskIPPhoneDirectory  clearlight=\"true\">\n";
+    // You may change the word Asterisk below, but no other part of the root tag.
+    echo "<AsteriskIPPhoneDirectory clearlight=\"true\">\n";
 
     // Loop through the results and output them correctly.
     // Spacing is setup below in case you wish to look at the result in a browser.
-    $previousname = "";
-    $firstloop = true;
-    foreach ($contacts as $contact) {
-        if ($contact['displayname'] != $previousname) {
-            if ($firstloop){
-                // flip the bit
-                $firstloop = false;
-            } else {
-                // close the previous entry
-                echo "        <Ring>" . $ringtype . "</Ring>\n";
-                echo "    </DirectoryEntry>\n";
+    foreach ($groupedContacts as $displayname => $contactList) {
+        // Only the mapped types are output, so a contact whose numbers are all
+        // of unmapped types would otherwise produce an entry with a name, no
+        // numbers, and a stray <Ring>.
+        $usable = array();
+        foreach ($contactList as $contact) {
+            if (isset($typemap[$contact['type']])) {
+                $usable[] = $contact;
             }
-            // Start the entry
-            echo "    <DirectoryEntry>\n";
-            echo "        <Name>" . htmlspecialchars($contact['displayname']) . "</Name>\n";
-            // set the current name to the previous name
-            $previousname = $contact['displayname'];
         }
+        if (!$usable) {
+            continue;
+        }
+
+        // Sort this contact's numbers into the configured display order.
+        usort($usable, function ($a, $b) use ($corder) {
+            $x = isset($corder[$a['type']]) ? $corder[$a['type']] : 99;
+            $y = isset($corder[$b['type']]) ? $corder[$b['type']] : 99;
+            if ($x === $y) {
+                return strcmp((string) $a['number'], (string) $b['number']);
+            }
+            return $x - $y;
+        });
+
+        // Start the entry
+        echo "    <DirectoryEntry>\n";
+        echo "        <Name>" . xml_text($displayname) . "</Name>\n";
+
         // Output the numbers as mapped above
-        if ($contact['type'] == $telephone) {
-            echo "        <Telephone>";
-            // use the number or E164 field is specified, unless it is an internal extension
-            if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) { echo $contact['number']; } else { echo $contact['E164']; }
-            echo "</Telephone>\n";
-        } elseif ($contact['type'] == $mobile) {
-            echo "        <Mobile>";
-            // use the number or E164 field is specified, unless it is an internal extension
-            if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) { echo $contact['number']; } else { echo $contact['E164']; }
-            echo "</Mobile>\n";
-        } elseif ($contact['type'] == $other) {
-            echo "        <Other>";
-            // use the number or E164 field is specified, unless it is an internal extension
-            if ($use_e164 == 0 || ($use_e164 == 1 && $contact['type'] == $ctype['internal'])) { echo $contact['number']; } else { echo $contact['E164']; }
-            echo "</Other>\n";
+        foreach ($usable as $contact) {
+            $type = (string) $contact['type'];
+            $tag = $typemap[$type];
+
+            // Use the E164 field when asked, except for internal extensions,
+            // which are dialled as-is. Fall back to the plain number when the
+            // E164 column is empty, which it commonly is.
+            //
+            // The old code tested $ctype['internal'] here, a variable this
+            // script never defines -- the Yealink and Fanvil versions do, but
+            // this one dropped labels entirely. It only ever evaluated when
+            // e164=1, so the default path hid it, and on PHP 8 the undefined
+            // index was a warning that FreePBX's handler promoted to a fatal.
+            $number = $contact['number'];
+            if ($use_e164 == 1 && $type !== 'internal' && !empty($contact['E164'])) {
+                $number = $contact['E164'];
+            }
+
+            echo "        <" . $tag . ">" . xml_text($number) . "</" . $tag . ">\n";
         }
+
+        echo "        <Ring>" . xml_text($ringtype) . "</Ring>\n";
+        echo "    </DirectoryEntry>\n";
     }
-    // Close the last entry.
-    echo "        <Ring>" . $ringtype . "</Ring>\n";
-    echo "    </DirectoryEntry>\n";
     // Output the closing tag of the root. If you changed it above, make sure you change it here.
     echo "</AsteriskIPPhoneDirectory>\n";
 }
