@@ -7,11 +7,16 @@ per-contact SIP NOTIFY buttons to reload config, reboot, or factory reset.
 
 Sortable, filterable, and auto-refreshing.
 
+Backported from
+**[sorvani/freepbx17-extension-status](https://github.com/sorvani/freepbx17-extension-status)**,
+which is the same page for FreePBX 17.
+
 > [!IMPORTANT]
 > **This targets FreePBX 14/15/16 on Sangoma OS (CentOS 7).** FreePBX 17 is
 > Debian with PHP 8 and a different Apache layout — use
-> **[sorvani/freepbx17-extension-status](https://github.com/sorvani/freepbx17-extension-status)**
-> there. The installer refuses to run on the wrong one.
+> **[freepbx17-extension-status](https://github.com/sorvani/freepbx17-extension-status)**
+> there instead. The installers refuse to run on the wrong platform, in both
+> directions.
 
 Tested on:
 
@@ -243,3 +248,28 @@ Installer environment variables:
 | `ENABLE_VERIFY_LOG` | `1` | `0` declines the access-log read |
 | `ACCESS_LOG` | `/var/log/httpd/access_log` | Log to grant read on |
 | `LOGROTATE_CONF` | `/etc/logrotate.d/httpd` | Where the postrotate hook goes |
+
+## Differences from the FreePBX 17 version
+
+Same page, same three-file layout, same features. What the backport had to
+change, against
+[freepbx17-extension-status](https://github.com/sorvani/freepbx17-extension-status):
+
+| | FreePBX 17 (Debian) | here (Sangoma OS) |
+| --- | --- | --- |
+| PHP | 8.2 | 5.6 / 7.4 |
+| Apache | `apache2`, `apache2ctl` | `httpd` |
+| mod_php | `php_module` | `php5_module` / `php7_module` |
+| Access log | `/var/log/apache2/other_vhosts_access.log` | `/var/log/httpd/access_log` |
+| Log grant | `chgrp` + `chmod` | ACL, group only as fallback |
+| Log setting | `$es_access_log`, one path | `$es_access_logs`, a list |
+| Verification | opt in, `ENABLE_VERIFY_LOG=1` | on by default, `=0` to decline |
+| Outbound endpoint | assumed present | checked, and prompted for when missing |
+
+The PHP itself is written to a 5.6 floor: no `??`, no `random_bytes()`, and no
+`str_starts_with()` — the last is PHP 8.0, so it is unavailable on *both* 5.6
+and 7.4 and had to go entirely. `es_get()`, `es_csrf_token()` and
+`es_starts_with()` stand in. Two more 5.6-specific fixes have no counterpart
+upstream: JSON floats serialise at precision 17 there, so a round-trip time
+would reach the browser as `20.199999999999999`, and an invalid UTF-8 byte in a
+User-Agent makes `json_encode()` return `false`, which would blank the page.
