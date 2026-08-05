@@ -34,7 +34,7 @@ Assorted scripts and files that work with FreePBX.
 | Folder | What it does | On FreePBX 17 |
 | --- | --- | --- |
 | [Backup_Yealink_Local_Contacts](Backup_Yealink_Local_Contacts/) | Lets Yealink phones PUT their local contacts and settings back into `/tftpboot` | [ported](https://github.com/sorvani/freepbx17-yealink-backup) |
-| [Reload_Reboot_Yealink](Reload_Reboot_Yealink/) | Web page to reload or reboot Yealink phones over AMI | untested |
+| [Reload_Reboot_Yealink](Reload_Reboot_Yealink/) | Web page to reload or reboot Yealink phones over AMI — superseded by [Extension_Status](Extension_Status/), which does the same per handset, for more brands, with confirmation | superseded |
 | [Example_Yealink_XML_Menu](Example_Yealink_XML_Menu/) | Sample XML menu and shared contacts for Yealink | static XML, unaffected |
 
 ## Other
