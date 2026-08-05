@@ -58,6 +58,21 @@
     min-width: 240px;
     font-size: 14px;
   }
+  /* Match the search input's height and border so the toolbar reads as one
+     row rather than a styled field next to a raw browser button. */
+  .toolbar button {
+    padding: 7px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #222;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .toolbar button:hover { background: var(--hover); border-color: #b8b8b8; }
+  .toolbar button:active { background: #ececec; }
+  .toolbar button:focus-visible { outline: 2px solid #1976d2; outline-offset: 2px; }
   .toolbar label { display: flex; align-items: center; gap: 6px; }
   .spacer { flex: 1; }
   .meta { color: var(--muted); font-size: 13px; }
@@ -353,7 +368,29 @@
   };
 
   var sortKey = 'aor', sortAsc = true, filter = '';
-  var verifyLines = {};   // contact URI -> the status line under its buttons
+  // Keyed on extension|brand|model, matching the server's device key - NOT the
+  // contact URI. A rebooting handset loses its contact entirely and comes back
+  // on a new port, so a URI key would drop the status line exactly when it
+  // matters most.
+  var verifyLines = {};
+
+  function deviceKey(r) { return r.aor + '|' + r.brand + '|' + r.model; }
+
+  // The row object held by a watcher goes stale as soon as the table reloads,
+  // so look the device up in the current set rather than trusting the closure.
+  function currentRow(key) {
+    for (var i = 0; i < rows.length; i++) {
+      if (deviceKey(rows[i]) === key) { return rows[i]; }
+    }
+    return null;
+  }
+
+  // Re-attach any verification line for this device. Appending an existing node
+  // moves it, so it survives the auto-refresh rebuilding the whole table.
+  function attachVerify(td, r) {
+    var line = verifyLines[deviceKey(r)];
+    if (line) { td.appendChild(line); }
+  }
   var $head = document.getElementById('head');
   var $body = document.getElementById('body');
   var $empty = document.getElementById('empty');
@@ -529,8 +566,12 @@
     // User-Agent, such as Sangoma Talk.
     var available = (r.registered && r.actionable !== false) ? ACTIONS[r.brand] : null;
     if (!available) {
-      // Softphone or unrecognised brand - nothing sensible to send it.
+      // Softphone, unrecognised brand, or a device that has dropped off.
       td.appendChild(el('span', '—', 'dash'));
+      // Still re-attach any verification in flight. A reboot makes the row go
+      // Unregistered and land here, which is exactly when the watch matters -
+      // returning early would discard it.
+      attachVerify(td, r);
       return td;
     }
     Object.keys(available).forEach(function (id) {
@@ -538,7 +579,7 @@
       var b = el('button', spec.label);
       if (spec.danger) { b.className = 'danger'; }
       b.addEventListener('click', function () {
-        if (!spec.confirm) { sendNotify(r, id, b); return; }
+        if (!spec.confirm) { sendNotify(r, id, b, spec.verify || 'config'); return; }
         // Name the specific handset, and say how many devices are actually
         // reached - that depends on the addressing mode, not just the row.
         confirmAction({
@@ -554,14 +595,14 @@
           note: blastRadius(r) + ' The phone typically acts on it within ~10s.',
           warning: WARNINGS[id] || null
         }).then(function (go) {
-          if (go) { sendNotify(r, id, b); }
+          if (go) { sendNotify(r, id, b, spec.verify || 'config'); }
         });
       });
       td.appendChild(b);
     });
     // Re-attach any verification result for this contact. Appending an existing
     // node moves it, so it survives the auto-refresh rebuilding the table.
-    if (verifyLines[r.uri]) { td.appendChild(verifyLines[r.uri]); }
+    attachVerify(td, r);
     return td;
   }
 
@@ -569,55 +610,109 @@
   // log re-fetching its config. That is the only end-to-end confirmation there
   // is: Asterisk reports the NOTIFY dispatched, not that the phone acted.
   // Only ever runs on demand - never on page load or auto-refresh.
-  function watchForFetch(r, cell) {
-    var old = verifyLines[r.uri];
+  function watchForFetch(r, cell, mode) {
+    if (mode === 'none') { return; }
+    var key = deviceKey(r);
+    var old = verifyLines[key];
     if (old) { old.remove(); }
 
     var line = el('span', null, 'verify pending');
-    // Kept by contact URI so the auto-refresh re-render can put it back rather
+    // Kept by device key so the auto-refresh re-render can put it back rather
     // than discarding a verification that is still running.
-    verifyLines[r.uri] = line;
-    line.appendChild(el('span', null, 'spin'));
-    line.appendChild(document.createTextNode('Verifying…'));
+    verifyLines[key] = line;
+    var spin = el('span', null, 'spin');
+    var text = document.createTextNode('Verifying…');
+    line.appendChild(spin);
+    line.appendChild(text);
     cell.appendChild(line);
 
     var since = Math.floor(Date.now() / 1000);
     var deadline = since + VERIFY_WINDOW;
+    // Independent facts, each just watched for. No order is assumed between
+    // them: a handset fetches its config during boot, which is before it can
+    // register again, and a Yealink fetches before rebooting as well.
+    var sawDown = false;      // it stopped being reachable
+    var cameBack = false;     // it became reachable again afterwards
+    var gotConfig = false;    // an HTTP 200 on its own config since the click
+    var configAt = '';
     var timer = setInterval(poll, 2000);
     poll();
 
-    function stop(cls, text) {
+    function stop(cls, msg) {
       clearInterval(timer);
       line.className = 'verify ' + cls;
-      line.textContent = text;
+      line.textContent = msg;
     }
+    function say(msg) { text.nodeValue = msg; }
 
-    // Verification became unavailable (log rotated away from us, or turned
-    // off). Not the operator's problem mid-click - remove the line silently.
+    // Verification is unavailable (log unreadable, or turned off). That is a
+    // supported configuration, not a fault - drop the line silently.
     function abandon() {
       clearInterval(timer);
       line.remove();
-      delete verifyLines[r.uri];
+      delete verifyLines[key];
+    }
+
+    function timedOut() {
+      var missing = [];
+      if (mode === 'register' && !cameBack) { missing.push(sawDown ? 'did not come back' : 'no reboot seen'); }
+      if (!gotConfig) { missing.push('no config fetch'); }
+      stop('bad', '✕ ' + missing.join(', ') + ' in ' + VERIFY_WINDOW + 's');
+    }
+
+    function progress() {
+      if (mode !== 'register') { return 'Verifying…'; }
+      if (!sawDown) { return 'Verifying…'; }
+      if (!cameBack) { return 'Rebooting…'; }
+      return 'Back online, waiting on config…';
     }
 
     function poll() {
-      if (Math.floor(Date.now() / 1000) > deadline) {
-        stop('bad', '✕ No config fetch in ' + VERIFY_WINDOW + 's');
-        return;
-      }
-      var q = '?action=verify&ip=' + encodeURIComponent(r.uri_ip) +
+      if (Math.floor(Date.now() / 1000) > deadline) { timedOut(); return; }
+
+      // One request reports both facts. ip is sent as a fallback for while the
+      // handset is down and cannot be resolved from the live contact list.
+      var q = '?action=verify&key=' + encodeURIComponent(key) +
+              '&ip=' + encodeURIComponent(r.uri_ip) +
               '&since=' + since;
+
       fetch(window.location.pathname + q, { credentials: 'same-origin' })
         .then(function (res) { return res.json(); })
         .then(function (j) {
-          if (!j.ok || j.readable === false) { abandon(); return; }
-          if (j.seen) { stop('good', '✓ Config fetched ' + j.at); }
+          // Only give up for good on an unusable setup. A transient failure -
+          // the handset being mid-reboot, say - must not end the watch.
+          if (j.readable === false) { abandon(); return; }
+          if (!j.ok) { return; }
+
+          // "Went away" means unreachable, not merely unregistered. A Yealink
+          // holds its registration through a reboot and only goes Unreachable;
+          // a Fanvil drops the contact. Both have to count.
+          if (j.reachable === false) { sawDown = true; }
+          else if (j.reachable === true && sawDown) { cameBack = true; }
+          if (j.seen && !gotConfig) { gotConfig = true; configAt = j.at || ''; }
+
+          // This poll already knows the device state, so do not let the table
+          // sit stale until the next auto-refresh. Pull fresh rows on the
+          // transition rather than patching the status text.
+          var cur = currentRow(key);
+          if (cur && (cur.registered !== j.registered ||
+                      (j.status && cur.status !== j.status))) { refresh(); }
+
+          var done = (mode === 'register') ? (cameBack && gotConfig) : gotConfig;
+          if (done) {
+            stop('good', (mode === 'register' ? '✓ Rebooted, config fetched ' : '✓ Config fetched ')
+                         + configAt);
+          } else {
+            say(progress());
+          }
         })
         .catch(function () { /* transient - the deadline ends it */ });
     }
   }
 
-  function sendNotify(r, actionId, button) {
+  // mode comes from the action spec, which lives in actionCell's scope - it has
+  // to be passed in, not reached for.
+  function sendNotify(r, actionId, button, mode) {
     var siblings = button.parentNode.querySelectorAll('button');
     Array.prototype.forEach.call(siblings, function (b) { b.disabled = true; });
     // Immediate feedback while the request is in flight.
@@ -642,7 +737,7 @@
     .then(function (j) {
       // Asterisk confirms dispatch, not delivery - say only what is true.
       toast(j.message, j.ok);
-      if (j.ok && VERIFY_ENABLED) { watchForFetch(r, button.parentNode); }
+      if (j.ok && VERIFY_ENABLED) { watchForFetch(r, button.parentNode, mode || 'config'); }
     })
     .catch(function (e) {
       toast('Request failed: ' + e.message, false);

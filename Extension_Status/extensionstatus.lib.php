@@ -155,6 +155,28 @@ function es_transport($uri) {
     return es_get($known, $t, 'Other');
 }
 
+/**
+ * Pull a MAC out of a User-Agent, normalised to 12 lower-case hex digits.
+ *
+ * Some makes put it in the SIP User-Agent and some do not:
+ *   "Fanvil V64 2.12.24.2 0c383e15bfe6"     -> 0c383e15bfe6
+ *   "Yealink SIP-T44U 108.87.0.20"          -> '' (nothing to find)
+ * The HTTP User-Agent separates it: "44:db:d2:c9:3c:a3".
+ *
+ * Anchored on a word boundary so a firmware version cannot be mistaken for a
+ * MAC, and the 6-group form is tried first so a separated MAC is not truncated.
+ */
+function es_mac_from_ua($ua) {
+    $ua = (string) $ua;
+    if (preg_match('~\b([0-9a-f]{2}(?:[:\-][0-9a-f]{2}){5})\b~i', $ua, $m)) {
+        return strtolower(preg_replace('~[^0-9a-f]~i', '', $m[1]));
+    }
+    if (preg_match('~\b([0-9a-f]{12})\b~i', $ua, $m)) {
+        return strtolower($m[1]);
+    }
+    return '';
+}
+
 /** Validate an IP, or return a placeholder. */
 function es_ip_or_placeholder($v) {
     return filter_var($v, FILTER_VALIDATE_IP) ? $v : 'Not an IP';
@@ -463,12 +485,12 @@ function es_log_tail($logfile, $bytes = 262144) {
  *
  * @return array{seen: bool, at?: string, what?: string, readable: bool}
  */
-function es_verify_fetch($logfiles, $ip, $model, $since) {
+function es_verify_fetch($logfiles, $ip, $brand, $model, $since, $mac = '') {
     if (!is_array($logfiles)) {
         $logfiles = array($logfiles);
     }
     $readable = false;
-    $best = null;
+    $all = array();
 
     foreach ($logfiles as $logfile) {
         if ($logfile === '' || !is_readable($logfile)) {
@@ -480,43 +502,80 @@ function es_verify_fetch($logfiles, $ip, $model, $since) {
         }
         $readable = true;
 
-        foreach (explode("\n", $tail) as $line) {
-            if (strpos($line, $ip) === false) {
-                continue;
-            }
-            // ... [10/Oct/2026:17:02:33 -0500] "GET /y-common.cfg HTTP/1.1" 200 8541 ...
-            if (!preg_match('~\[([^\]]+)\]\s+"(?:GET|POST)\s+(\S+)[^"]*"\s+(\d{3})~', $line, $m)) {
-                continue;
-            }
-            if ($m[3] !== '200') {
-                continue;                       // 401 is the pre-auth probe, not a fetch
-            }
-            if (!preg_match('~\.(cfg|boot)$~i', $m[2])) {
-                continue;
-            }
-            $ts = strtotime(preg_replace('~^(\d+)/(\w+)/(\d+):~', '$1 $2 $3 ', $m[1]));
-            if ($ts === false || $ts < $since) {
-                continue;
-            }
-            // Prefer a line whose User-Agent names this model: several handsets
-            // can share one public IP.
-            $exact = ($model !== '' && stripos($line, $model) !== false);
-            if ($best === null || $exact) {
-                $best = array('at' => date('H:i:s', $ts), 'what' => $m[2], 'exact' => $exact);
-                if ($exact) {
-                    break 2;
-                }
-            }
-        }
+        $all = array_merge($all, explode("\n", $tail));
     }
 
     if (!$readable) {
         return array('seen' => false, 'readable' => false);
     }
-    if ($best === null) {
+
+    // The MAC identifies the device; several phones share one public IP, so the
+    // address alone cannot. It comes from the SIP User-Agent when the make
+    // publishes it there - authoritative, and already in hand. Only when it does
+    // not is it learned from the HTTP User-Agent in the log.
+    $mac = strtolower(preg_replace('~[^0-9a-f]~i', '', (string) $mac));
+    if (strlen($mac) !== 12) {
+        $mac = '';
+    }
+    if ($mac === '') {
+        foreach ($all as $line) {
+            if (strpos($line, $ip) === false) {
+                continue;
+            }
+            if ($brand !== '' && stripos($line, $brand) === false) {
+                continue;
+            }
+            if ($model !== '' && stripos($line, $model) === false) {
+                continue;
+            }
+            // Trailing quoted field is the User-Agent.
+            if (!preg_match('~"([^"]*)"\s*$~', $line, $ua)) {
+                continue;
+            }
+            $mac = es_mac_from_ua($ua[1]);
+            if ($mac !== '') {
+                break;
+            }
+        }
+    }
+    if ($mac === '') {
         return array('seen' => false, 'readable' => true);
     }
-    return array('seen' => true, 'readable' => true, 'at' => $best['at'], 'what' => $best['what']);
+
+    // A config pull belonging to THAT MAC. One handset requests plenty of files
+    // - shared templates (y-common.cfg), boot files, firmware (.rom), phonebook
+    // scripts - and none of those prove this phone read its own config. So the
+    // path must carry the MAC and be a config file.
+    foreach ($all as $line) {
+        if (stripos($line, $mac) === false) {
+            continue;
+        }
+        // ... [10/Oct/2026:17:02:33 -0500] "GET /44dbd2c93ca3.cfg HTTP/1.1" 200 ...
+        if (!preg_match('~\[([^\]]+)\]\s+"(?:GET|POST)\s+(\S+)[^"]*"\s+(\d{3})~', $line, $m)) {
+            continue;
+        }
+        if ($m[3] !== '200') {
+            continue;                       // 401 is the pre-auth probe, not a fetch
+        }
+        // MAC case varies between requests from one phone - 249ad8416c5c.cfg and
+        // 249AD8416C5C-contact.xml both came from a single T54W.
+        if (stripos($m[2], $mac) === false) {
+            continue;
+        }
+        // cfg and boot are confirmed against live Yealink and Fanvil traffic;
+        // xml and ld are a best guess for makes not available to test.
+        if (!preg_match('~\.(cfg|boot|xml|ld)$~i', $m[2])) {
+            continue;
+        }
+        $ts = strtotime(preg_replace('~^(\d+)/(\w+)/(\d+):~', '$1 $2 $3 ', $m[1]));
+        if ($ts === false || $ts < $since) {
+            continue;
+        }
+        return array('seen' => true, 'readable' => true,
+                     'at' => date('H:i:s', $ts), 'what' => $m[2], 'mac' => $mac);
+    }
+
+    return array('seen' => false, 'readable' => true);
 }
 
 /**
@@ -669,6 +728,9 @@ function es_build_rows($astman, $fcore, $devices = null, $statefile = null, $ret
                 'firmware'  => $r['firmware'],
                 'transport' => $r['transport'],
                 'uri_ip'    => $r['uri_ip'],
+                // Kept so the MAC is still known while the handset is down and
+                // no longer has a live User-Agent to read it from.
+                'useragent' => $r['useragent'],
                 'last_seen' => $now,
             );
         }
@@ -691,7 +753,7 @@ function es_build_rows($astman, $fcore, $devices = null, $statefile = null, $ret
                 'brand'      => (string) es_get($rec, 'brand', ''),
                 'model'      => (string) es_get($rec, 'model', ''),
                 'firmware'   => (string) es_get($rec, 'firmware', ''),
-                'useragent'  => '',
+                'useragent'  => (string) es_get($rec, 'useragent', ''),
                 'transport'  => '',
                 'status'     => 'Unregistered',
                 'rtt_ms'     => null,
