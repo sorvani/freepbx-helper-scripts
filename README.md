@@ -11,6 +11,7 @@ Assorted scripts and files that work with FreePBX.
 > | **[sorvani/freepbx17-phonebooks](https://github.com/sorvani/freepbx17-phonebooks)** | the five phonebook / address book generators below |
 > | **[sorvani/freepbx17-yealink-backup](https://github.com/sorvani/freepbx17-yealink-backup)** | [Backup_Yealink_Local_Contacts](Backup_Yealink_Local_Contacts/) |
 > | **[sorvani/freepbx17-extension-status](https://github.com/sorvani/freepbx17-extension-status)** | [Extension_Status](Extension_Status/) |
+> | **[sorvani/freepbx17-initial-setup-scripts](https://github.com/sorvani/freepbx17-initial-setup-scripts)** | [InitialSetup](InitialSetup/) |
 >
 > Anything that loads `/etc/freepbx.conf` hits the same FreePBX 17 problem: the bootstrap
 > runs the GUI auth layer, which wants the admin session a script fetched by a phone will
@@ -44,7 +45,7 @@ Assorted scripts and files that work with FreePBX.
 | [Extension_Status](Extension_Status/) | Admin page listing every PJSIP contact, with per-handset SIP NOTIFY buttons | [ported](https://github.com/sorvani/freepbx17-extension-status) |
 | [Aastra_Button_Functions](Aastra_Button_Functions/) | Ring group membership page for Aastra phones | loads `freepbx.conf`, not ported |
 | [Monitor_Trunk_Failure](Monitor_Trunk_Failure/) | AGI that emails when an outbound call fails to dial out over a trunk — hooks into the trunk's "Monitor Trunk Failures" field. Not trunk registration state | untested |
-| [InitialSetup](InitialSetup/) | Post-install setup and update scripts for a new PBX | `yum`-based, Sangoma OS only |
+| [InitialSetup](InitialSetup/) | Post-install setup and update scripts for a new PBX — `yum`-based, Sangoma OS only | [ported](https://github.com/sorvani/freepbx17-initial-setup-scripts) |
 
 "Untested" means exactly that — nobody has checked it on 17, not that it is known broken.
 
