@@ -43,7 +43,7 @@ Assorted scripts and files that work with FreePBX.
 | --- | --- | --- |
 | [Extension_Status](Extension_Status/) | Admin page listing every PJSIP contact, with per-handset SIP NOTIFY buttons | [ported](https://github.com/sorvani/freepbx17-extension-status) |
 | [Aastra_Button_Functions](Aastra_Button_Functions/) | Ring group membership page for Aastra phones | loads `freepbx.conf`, not ported |
-| [Monitor_Trunk_Failure](Monitor_Trunk_Failure/) | AGI that emails when a trunk fails | untested |
+| [Monitor_Trunk_Failure](Monitor_Trunk_Failure/) | AGI that emails when an outbound call fails to dial out over a trunk — hooks into the trunk's "Monitor Trunk Failures" field. Not trunk registration state | untested |
 | [InitialSetup](InitialSetup/) | Post-install setup and update scripts for a new PBX | `yum`-based, Sangoma OS only |
 
 "Untested" means exactly that — nobody has checked it on 17, not that it is known broken.
