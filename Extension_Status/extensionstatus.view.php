@@ -115,7 +115,10 @@
   .pill.tls { background: #ede7f6; }
   .pill.ws, .pill.wss { background: #fff8e1; }
   .status-reachable { color: #2e7d32; }
-  .status-unreachable, .status-unknown { color: var(--danger); }
+  .status-unreachable, .status-unknown, .status-unregistered { color: var(--danger); }
+  .status-unregistered { font-weight: 600; }
+  tbody tr.down td { background: #fffafa; }
+  tbody tr.down:hover td { background: #fff2f2; }
 
   .ips { white-space: nowrap; font-size: 13px; }
   .ips b { font-weight: 600; }
@@ -494,6 +497,12 @@
 
   function ipCell(r) {
     var td = el('td', null, 'ips');
+    if (!r.registered) {
+      // Nothing is registered, so there are no addresses to report - three
+      // lines of "Not an IP" would be noise.
+      td.appendChild(el('span', '—', 'none'));
+      return td;
+    }
     [['URI', r.uri_ip], ['Via', r.via_ip], ['CallID', r.callid_ip]].forEach(function (pair) {
       td.appendChild(el('b', pair[0] + ':'));
       td.appendChild(document.createTextNode(' '));
@@ -642,6 +651,7 @@
     $body.textContent = '';
     view.forEach(function (r) {
       var tr = document.createElement('tr');
+      if (!r.registered) { tr.className = 'down'; }
       tr.appendChild(el('td', r.aor));
       tr.appendChild(el('td', r.name));
       tr.appendChild(el('td', r.brand));
@@ -649,7 +659,9 @@
       tr.appendChild(el('td', r.firmware));
 
       var tt = el('td');
-      tt.appendChild(el('span', r.transport, 'pill ' + r.transport.toLowerCase()));
+      if (r.transport) {
+        tt.appendChild(el('span', r.transport, 'pill ' + r.transport.toLowerCase()));
+      }
       tr.appendChild(tt);
 
       tr.appendChild(el('td', r.status, 'status-' + String(r.status).toLowerCase()));
@@ -661,8 +673,10 @@
     });
 
     $empty.hidden = view.length !== 0;
-    $meta.textContent = view.length + ' of ' + rows.length + ' contact' +
-                        (rows.length === 1 ? '' : 's');
+    var down = view.filter(function (r) { return !r.registered; }).length;
+    $meta.textContent = view.length + ' of ' + rows.length + ' device' +
+                        (rows.length === 1 ? '' : 's') +
+                        (down ? ' · ' + down + ' unregistered' : '');
   }
 
   function refresh() {
