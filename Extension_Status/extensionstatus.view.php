@@ -498,9 +498,14 @@
   function ipCell(r) {
     var td = el('td', null, 'ips');
     if (!r.registered) {
-      // Nothing is registered, so there are no addresses to report - three
-      // lines of "Not an IP" would be noise.
-      td.appendChild(el('span', '—', 'none'));
+      // Nothing is registered now, so there is no live Via/CallID to report.
+      // The last address it was seen at is still worth showing.
+      if (r.uri_ip) {
+        td.appendChild(el('b', 'Last IP:'));
+        td.appendChild(document.createTextNode(' ' + r.uri_ip));
+      } else {
+        td.appendChild(el('span', '—', 'none'));
+      }
       return td;
     }
     [['URI', r.uri_ip], ['Via', r.via_ip], ['CallID', r.callid_ip]].forEach(function (pair) {
@@ -518,7 +523,11 @@
 
   function actionCell(r) {
     var td = el('td', null, 'actions');
-    var available = ACTIONS[r.brand];
+    // A remembered-but-gone device still has a brand, so check registration
+    // first: there is no contact URI to address, and the server would reject it.
+    // r.actionable excludes softphones that share a hardware vendor's
+    // User-Agent, such as Sangoma Talk.
+    var available = (r.registered && r.actionable !== false) ? ACTIONS[r.brand] : null;
     if (!available) {
       // Softphone or unrecognised brand - nothing sensible to send it.
       td.appendChild(el('span', '—', 'dash'));

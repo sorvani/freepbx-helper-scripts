@@ -269,6 +269,83 @@ function es_device_info($ua) {
 
 /** Extension display name, cached so duplicate AORs cost one lookup. */
 /**
+ * Can this device be sent a NOTIFY at all?
+ *
+ * A softphone that shares a hardware vendor's User-Agent prefix would
+ * otherwise inherit that vendor's buttons - Sangoma Talk is a phone app, not a
+ * Sangoma desk phone, and check-sync means nothing to it.
+ */
+function es_actionable($brand, $model, $excluded) {
+    if (!is_array($excluded) || !isset($excluded[$brand])) {
+        return true;
+    }
+    foreach ($excluded[$brand] as $bad) {
+        if (strcasecmp((string) $model, (string) $bad) === 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Stable identity for a physical device.
+ *
+ * Not the contact URI or the AMI contact ID - both are derived from the source
+ * address and change whenever the phone re-registers from a new port, which
+ * would make every device look new. Extension + brand + model survives that and
+ * survives a firmware upgrade. Two identical models on one extension collapse
+ * into one entry; that is an accepted limit.
+ */
+function es_device_key($aor, $brand, $model) {
+    return $aor . '|' . $brand . '|' . $model;
+}
+
+/** Remembered devices, as key => record. Missing or unreadable reads as none. */
+function es_state_load($file) {
+    if ($file === '' || !is_readable($file)) {
+        return array();
+    }
+    $raw = @file_get_contents($file);
+    if ($raw === false || $raw === '') {
+        return array();
+    }
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : array();
+}
+
+/**
+ * Persist remembered devices. Best effort: if the location is not writable the
+ * page still works, it just cannot remember drop-offs.
+ *
+ * Written to a temp file and renamed so a concurrent reader never sees a
+ * half-written file, and rename() is atomic within a filesystem.
+ */
+function es_state_save($file, $state) {
+    if ($file === '') {
+        return false;
+    }
+    $dir = dirname($file);
+    if (!is_dir($dir) || !is_writable($dir)) {
+        return false;
+    }
+    $tmp = @tempnam($dir, 'esdev');
+    if ($tmp === false) {
+        return false;
+    }
+    $ok = @file_put_contents($tmp, json_encode($state), LOCK_EX);
+    if ($ok === false) {
+        @unlink($tmp);
+        return false;
+    }
+    @chmod($tmp, 0640);
+    if (!@rename($tmp, $file)) {
+        @unlink($tmp);
+        return false;
+    }
+    return true;
+}
+
+/**
  * Every PJSIP device FreePBX knows about, as extension => display name.
  *
  * This is what makes the Status column mean something: without it the page can
@@ -495,7 +572,7 @@ function es_registration_counts($contacts) {
  * Same shape es_send_notify() needs, but without the per-extension display-name
  * lookups es_build_rows() performs - a button click has no use for them.
  */
-function es_build_targets($astman) {
+function es_build_targets($astman, $excluded = array()) {
     $contacts = es_fetch_contacts($astman);
     $counts   = es_registration_counts($contacts);
     $targets  = array();
@@ -504,18 +581,20 @@ function es_build_targets($astman) {
         $endpoint = es_utf8(es_get($data, 'EndpointName', $aor));
         $dev      = es_device_info(es_get($data, 'UserAgent', ''));
         $targets[] = array(
-            'uri'      => es_utf8(es_get($data, 'URI', '')),
-            'aor'      => $aor,
-            'endpoint' => $endpoint,
-            'siblings' => es_get($counts, $endpoint, 1),
-            'brand'    => $dev['brand'],
+            'uri'        => es_utf8(es_get($data, 'URI', '')),
+            'aor'        => $aor,
+            'endpoint'   => $endpoint,
+            'siblings'   => es_get($counts, $endpoint, 1),
+            'brand'      => $dev['brand'],
+            'model'      => $dev['model'],
+            'actionable' => es_actionable($dev['brand'], $dev['model'], $excluded),
         );
     }
     return $targets;
 }
 
 /** Build the normalized row set the page and the JSON endpoint both use. */
-function es_build_rows($astman, $fcore, $devices = null) {
+function es_build_rows($astman, $fcore, $devices = null, $statefile = null, $retain_days = 7, $excluded = array()) {
     $results = es_fetch_contacts($astman);
     $counts  = es_registration_counts($results);
 
@@ -565,11 +644,71 @@ function es_build_rows($astman, $fcore, $devices = null) {
             // Devices an endpoint-mode NOTIFY to this extension will reach.
             'siblings'   => es_get($counts, $endpoint, 1),
             'registered' => true,
+            'actionable' => es_actionable($dev['brand'], $dev['model'], $excluded),
         );
     }
 
-    // Anything configured but not currently registered gets a row of its own,
-    // so a phone that drops off is visible as down rather than just absent.
+    // ---- devices remembered from earlier, now missing ----------------------
+    //
+    // The configured-device list below only catches an extension with NO
+    // registrations at all. An extension with several handsets keeps looking
+    // registered when one of them drops, so that device would just vanish -
+    // which is the case worth catching. Hence remembered state.
+    $now = time();
+    if ($statefile !== null && $statefile !== '') {
+        $state = es_state_load($statefile);
+        $live_keys = array();
+        foreach ($rows as $r) {
+            $k = es_device_key($r['aor'], $r['brand'], $r['model']);
+            $live_keys[$k] = true;
+            $state[$k] = array(
+                'aor'       => $r['aor'],
+                'name'      => $r['name'],
+                'brand'     => $r['brand'],
+                'model'     => $r['model'],
+                'firmware'  => $r['firmware'],
+                'transport' => $r['transport'],
+                'uri_ip'    => $r['uri_ip'],
+                'last_seen' => $now,
+            );
+        }
+
+        $cutoff = $now - ((int) $retain_days * 86400);
+        foreach ($state as $k => $rec) {
+            if (!is_array($rec) || (int) es_get($rec, 'last_seen', 0) < $cutoff) {
+                unset($state[$k]);          // aged out - stop reporting it
+                continue;
+            }
+            if (isset($live_keys[$k])) {
+                continue;
+            }
+            $last = (int) es_get($rec, 'last_seen', 0);
+            $rows[] = array(
+                'aor'        => (string) es_get($rec, 'aor', ''),
+                'endpoint'   => (string) es_get($rec, 'aor', ''),
+                'uri'        => '',
+                'name'       => (string) es_get($rec, 'name', ''),
+                'brand'      => (string) es_get($rec, 'brand', ''),
+                'model'      => (string) es_get($rec, 'model', ''),
+                'firmware'   => (string) es_get($rec, 'firmware', ''),
+                'useragent'  => '',
+                'transport'  => '',
+                'status'     => 'Unregistered',
+                'rtt_ms'     => null,
+                'uri_ip'     => (string) es_get($rec, 'uri_ip', ''),
+                'via_ip'     => '',
+                'callid_ip'  => '',
+                'expire'     => $last,
+                'expire_str' => 'last seen ' . date('Y/m/d H:i:s', $last),
+                'siblings'   => 0,
+                'registered' => false,
+                'actionable' => false,
+            );
+        }
+        es_state_save($statefile, $state);
+    }
+
+    // ---- configured devices that have never registered ---------------------
     $seen = array();
     foreach ($rows as $r) {
         $seen[$r['aor']] = true;
@@ -603,6 +742,7 @@ function es_build_rows($astman, $fcore, $devices = null) {
             'expire_str' => '-',
             'siblings'   => 0,
             'registered' => false,
+            'actionable' => false,
         );
     }
     return $rows;
@@ -655,6 +795,11 @@ function es_send_notify($astman, $uri, $action, $actionmap, $rows, $who, $mode) 
     }
     // The action must be one defined for THAT row's brand, so a Yealink-only
     // command cannot be aimed at a Polycom by editing the request.
+    // A softphone wearing a hardware vendor's User-Agent gets nothing, however
+    // the request was crafted.
+    if (isset($match['actionable']) && !$match['actionable']) {
+        return array('ok' => false, 'message' => 'That device does not accept NOTIFY actions.');
+    }
     $allowed = es_get($actionmap, $match['brand'], array());
     if (!isset($allowed[$action])) {
         return array('ok' => false, 'message' => 'That action is not available for a ' . $match['brand'] . ' device.');
