@@ -151,13 +151,6 @@ $es_notify_actions = array(
         // way a Yealink does - it re-reads during boot, once it is already
         // down. Either way the phone goes away, so this is a reboot button and
         // is treated as one. Mislabelling it would drop a call without warning.
-        //
-        // No factory reset, and not for want of trying: tested 2026-08-05 on a
-        // V64 running 2.12.24.2 by sending Yealink's ACTION-URI / key=Reset
-        // straight to its contact URI. The handset answered 200 OK and did
-        // nothing - no reboot, no re-registration, no config fetch. Since a 200
-        // is indistinguishable from success at the AMI layer, the button would
-        // be a silent no-op. Fanvil does not document a NOTIFY that resets.
         'restart' => array('label' => 'Reboot', 'confirm' => true, 'danger' => true,
                            'verify' => 'register',
                            'headers' => array('Event' => 'check-sync')),
