@@ -453,6 +453,40 @@ function es_notify_mode($configured) {
     return $configured === 'endpoint' ? 'endpoint' : 'uri';
 }
 
+/**
+ * Ask Asterisk to probe an endpoint's contacts now, rather than at its next
+ * scheduled qualify.
+ *
+ * A stock AOR carries qualify_frequency=60, so Asterisk re-probes a contact
+ * once a minute and its Status trails the handset by up to that long. Both
+ * edges of a reboot land on the same tick: measured on the FreePBX 17 box, a
+ * T44U was marked Unreachable at 20:21:13 and Reachable at 20:22:10, having
+ * gone down and come back well inside that window. Verification watches those
+ * transitions, so without this it sits on "Rebooting..." for most of a minute
+ * after the handset is answering again.
+ *
+ * An OPTIONS goes out immediately and the status follows within the round trip
+ * - 25ms there - so the next poll sees it. Only called while a reboot is being
+ * verified; nothing probes on a page load or an auto-refresh.
+ *
+ * Asterisk has no per-contact qualify, so this probes every contact on the
+ * endpoint's AORs, not only the handset whose button was clicked.
+ */
+function es_qualify($astman, $aor) {
+    // This ends up in a CLI command string, so accept only what an extension
+    // name can legitimately be and drop anything else rather than escaping it.
+    if (!preg_match('/^[A-Za-z0-9_-]+$/', (string) $aor)) {
+        return false;
+    }
+    try {
+        $resp = $astman->send_request('Command', array('Command' => 'pjsip qualify ' . $aor));
+    } catch (Exception $e) {
+        return false;
+    }
+
+    return isset($resp['Response']) && strcasecmp((string) $resp['Response'], 'Success') === 0;
+}
+
 // ---------------------------------------------------------------------------
 // Verification
 // ---------------------------------------------------------------------------

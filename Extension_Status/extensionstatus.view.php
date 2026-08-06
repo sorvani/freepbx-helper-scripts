@@ -635,6 +635,7 @@
     var cameBack = false;     // it became reachable again afterwards
     var gotConfig = false;    // an HTTP 200 on its own config since the click
     var configAt = '';
+    var probeTick = false;    // ask for a qualify on every other poll
     var timer = setInterval(poll, 2000);
     poll();
 
@@ -670,11 +671,20 @@
     function poll() {
       if (Math.floor(Date.now() / 1000) > deadline) { timedOut(); return; }
 
+      // Asterisk re-probes a contact only every qualify_frequency seconds - 60
+      // by default - so Reachable can be a minute behind the handset, which is
+      // what made a finished reboot look like a hung one. Ask for a probe while
+      // watching a reboot, on every other poll: an OPTIONS round trip is cheap,
+      // but the qualify is endpoint-wide and would otherwise hit every sibling
+      // contact on the extension twice a second.
+      probeTick = !probeTick;
+      var probe = (mode === 'register' && probeTick) ? '&probe=1' : '';
+
       // One request reports both facts. ip is sent as a fallback for while the
       // handset is down and cannot be resolved from the live contact list.
       var q = '?action=verify&key=' + encodeURIComponent(key) +
               '&ip=' + encodeURIComponent(r.uri_ip) +
-              '&since=' + since;
+              '&since=' + since + probe;
 
       fetch(window.location.pathname + q, { credentials: 'same-origin' })
         .then(function (res) { return res.json(); })
